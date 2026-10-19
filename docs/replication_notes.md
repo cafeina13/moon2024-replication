@@ -30,6 +30,22 @@ raw UCI data, equals the authors' published table on all 3,289 hours and 17 colu
 | Data | Not public per Table 1 | The authors publish the finished feature table only; the raw KEPCO and KMA data are not available, so its preprocessing cannot be replicated. Table 1 statistics are checked against it |
 | Split | Train Sept 2015-Dec 2017, test 2018 | 20,472 / 8,760 hours, as in the authors' code |
 
+## Tree ensembles (Tables 5-12)
+
+| Point | Article | What we do | Evidence |
+|---|---|---|---|
+| Selection score | GridSearchCV, 5-fold, score not stated | Negative MAPE; KFold without shuffling | Authors' code |
+| RF "auto" | Features per split: auto, sqrt, log2 | `max_features=1.0` ("auto" was removed from scikit-learn; for regression it meant all features) | Authors' code uses `None`, the same thing |
+| XGBoost feature sampling | "Feature sample by tree/level/node: 0.5, 0.75, 1.0" | Only `colsample_bytree` is varied (486 settings, not 4,374) | Authors' code |
+| XGBoost "gbdt" | Booster gbdt, dart | `gbtree`, `dart` | XGBoost's name for gbdt |
+| XGBoost dart | – | Kept as in the grid. With XGBoost's default `rate_drop=0` no trees are dropped, so dart behaves like gbtree | Timing probe: same fit time |
+| LightGBM subsample | 0.5 | Kept, but it has no effect: LightGBM only subsamples when `subsample_freq > 0`, which neither the article nor the code sets | LightGBM documentation |
+| GBM quantile loss | "quantile", no quantile given | scikit-learn default `alpha=0.9` | Authors' code |
+| Seeds | Random state 42 | 42 for every model | Article |
+| Versions | Not stated | Kaggle's: scikit-learn 1.6.1, XGBoost 3.4.1, LightGBM 4.6.0, CatBoost 1.2.10, pandas 2.3.3, NumPy 2.1.3 | Recorded with each run |
+
+The random forest on AEP reproduces Tables 8, 9, 10 and 12 to every reported digit.
+
 ## Metrics
 
 | Point | Article | What we do |

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from moon2024 import metrics
+from moon2024 import metrics, paper
 
 Y = [100.0, 200.0, 300.0, 400.0]
 Y_HAT = [110.0, 180.0, 300.0, 440.0]
@@ -22,31 +22,18 @@ def test_nmae():
     assert metrics.nmae(Y, Y_HAT) == pytest.approx(7.0)
 
 
-# (MAPE_T, CVRMSE_T, NMAE_T) from Tables 8, 9, 10 and the harmonic mean from Table 12
-PAPER_AEP = {
-    "external": {
-        "RF": ((45.60, 68.61, 44.68), 50.95), "GBM": ((43.01, 73.75, 44.99), 50.82),
-        "XGBoost": ((47.11, 78.43, 47.35), 54.45), "LightGBM": ((46.13, 74.06, 46.75), 53.03),
-        "CatBoost": ((45.88, 74.38, 46.79), 52.99),
-    },
-    "internal": {
-        "RF": ((46.70, 74.09, 45.80), 52.87), "GBM": ((41.50, 75.07, 43.52), 49.68),
-        "XGBoost": ((52.36, 82.75, 51.37), 59.23), "LightGBM": ((51.60, 79.00, 49.87), 57.59),
-        "CatBoost": ((48.79, 77.16, 47.69), 55.12),
-    },
-    "total": {
-        "RF": ((46.14, 66.28, 43.94), 50.40), "GBM": ((40.37, 71.93, 42.64), 48.29),
-        "XGBoost": ((52.68, 75.89, 49.32), 57.21), "LightGBM": ((44.39, 69.63, 44.04), 50.34),
-        "CatBoost": ((41.35, 68.69, 42.61), 48.23),
-    },
-}
+@pytest.mark.parametrize("dataset", paper.HARMONIC_MEAN_TABLES)
+def test_harmonic_mean_matches_paper(dataset):
+    """Tables 11 and 12 from the T columns of Tables 5-10.
 
-
-@pytest.mark.parametrize("inputs", PAPER_AEP)
-def test_harmonic_mean_matches_table12(inputs):
-    """Table 12 from Tables 8-10. The paper used unrounded values, so allow 0.01."""
-    for model, (values, expected) in PAPER_AEP[inputs].items():
-        assert metrics.harmonic_mean(*values) == pytest.approx(expected, abs=0.011), model
+    The paper used unrounded values, so recomputing from the rounded table values may differ by 0.01.
+    """
+    _, rows = paper.HARMONIC_MEAN_TABLES[dataset]
+    for model, expected in rows.items():
+        for inputs, hm in zip(["external", "internal", "total"], expected):
+            _, table = paper.ENSEMBLE_TABLES[(dataset, inputs)]
+            t_values = [table[model][paper.COLUMNS.index(c)] for c in ("MAPE_T", "CVRMSE_T", "NMAE_T")]
+            assert metrics.harmonic_mean(*t_values) == pytest.approx(hm, abs=0.011), (model, inputs)
 
 
 def test_scores_by_day_type_uses_group_means():
