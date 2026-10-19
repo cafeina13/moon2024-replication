@@ -45,6 +45,31 @@ def to_hourly(raw: pd.DataFrame) -> pd.DataFrame:
     return hourly[list(WEATHER.values()) + ["Consumption"]]
 
 
+def to_hourly_raw_columns(raw: pd.DataFrame) -> pd.DataFrame:
+    """The original AEP columns, hourly, for the experiment of Figures 12 and 13.
+
+    The article only says the raw data was "sampled hourly" and points to
+    Candanedo et al. (2017) for the variables. Energy columns (Appliances,
+    lights) are summed over (t - 1 h, t] like the target; every sensor and
+    weather column is the reading at t, like the weather in the main table.
+    NSM, WeekStatus and Day_of_week are derived as in Candanedo et al.; the
+    day is taken from the hour's start, WeekStatus is 1 on weekdays and 0 on
+    weekends (the coding in the article's text on Figure 13).
+    """
+    hour_end = raw.index.ceil("h")
+    complete = raw.groupby(hour_end).size() == READINGS_PER_HOUR
+    energy = raw[["Appliances", "lights"]].groupby(hour_end).sum()[complete].astype(float)
+    sensors = raw[raw.index.minute == 0].drop(columns=["Appliances", "lights"])
+    table = energy.join(sensors, how="left")
+
+    day = table.index - pd.Timedelta(hours=1)
+    table["NSM"] = (table.index - table.index.normalize()).total_seconds()
+    table["WeekStatus"] = (day.dayofweek < 5).astype(int)
+    table["Day_of_week"] = day.dayofweek
+    table.index.name = "Date"
+    return table.rename(columns={"Appliances": "Consumption"})
+
+
 def load_authors_aep() -> pd.DataFrame:
     """The authors' AEP feature table (github.com/sodayeong/PLOS-ONE_Github)."""
     table = pd.read_csv(find_file(AUTHORS_AEP), parse_dates=["Date"], date_format="%Y-%m-%d %H:%M")
@@ -81,6 +106,7 @@ def split_urc(table: pd.DataFrame):
 
 
 DATASETS = ["aep", "urc"]
+RAW_DATASET = "aep-raw"  # Figures 12 and 13
 
 
 def load_dataset(name: str):
@@ -91,4 +117,16 @@ def load_dataset(name: str):
         return split_aep(build_features(to_hourly(load_raw_aep())))
     if name == "urc":
         return split_urc(load_authors_urc())
+    if name == RAW_DATASET:
+        return split_aep(to_hourly_raw_columns(load_raw_aep()))
     raise ValueError(f"unknown dataset {name!r}")
+
+
+def input_sets(name: str) -> dict[str, list[str]]:
+    """The input sets a dataset is trained on: external, internal and total, or all raw columns."""
+    from .features import INPUT_SETS, TARGET
+
+    if name == RAW_DATASET:
+        train, _ = load_dataset(name)
+        return {"raw": [c for c in train.columns if c != TARGET]}
+    return INPUT_SETS

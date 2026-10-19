@@ -46,6 +46,14 @@ raw UCI data, equals the authors' published table on all 3,289 hours and 17 colu
 
 The random forest on AEP reproduces Tables 8, 9, 10 and 12 to every reported digit.
 
+### Differences from the paper and their causes
+
+| Where | Difference | Cause |
+|---|---|---|
+| Table 5, LightGBM | About +2 points in every cell | Cross-validation ranks `dart` (MAPE 10.11%) just ahead of `gbdt` (10.32%). Refitting the second-ranked `gbdt`, learning rate 0.01, 1,000 trees (also the setting in the authors' final-model notebook) reproduces all nine values exactly. LightGBM's dart drops trees at random, so a near-tie can flip between versions |
+| Tables 5-7, XGBoost and CatBoost | Ours 0.1-0.7 points better | Likely library versions: XGBoost 2.0 changed the default `tree_method` from exact/approx to `hist`, and CatBoost defaults have changed since the paper's runs. Not yet tested |
+| Figure 12 | Paper's R² of 0.63-0.96 are in-sample | See Figures 12-13 below |
+
 ## Metrics
 
 | Point | Article | What we do |

@@ -60,15 +60,16 @@ def cv_path(out: Path, dataset: str, model: str, inputs: str, index: int, count:
     return out / f"cv_{dataset}_{model}_{inputs}_shard{index}of{count}.csv"
 
 
-def search(dataset: str, model: str, index: int, count: int, out: Path, inputs: list[str]) -> None:
+def search(dataset: str, model: str, index: int, count: int, out: Path, inputs: list[str] | None) -> None:
     train, _ = data.load_dataset(dataset)
+    sets = data.input_sets(dataset)
     chosen = ensembles.shard(model, index, count)
-    for name in inputs:
+    for name in inputs or sets:
         path = cv_path(out, dataset, model, name, index, count)
         if path.exists():
             print(f"skip {path.name}: already done", flush=True)
             continue
-        table = ensembles.search(model, chosen, train[INPUT_SETS[name]], train[TARGET])
+        table = ensembles.search(model, chosen, train[sets[name]], train[TARGET])
         table["params"] = table["params"].map(json.dumps)
         table.to_csv(path, index=False)
     (out / f"versions_{dataset}_{model}_shard{index}of{count}.json").write_text(json.dumps(versions(), indent=2))
@@ -77,7 +78,7 @@ def search(dataset: str, model: str, index: int, count: int, out: Path, inputs: 
 def finalize(dataset: str, model: str, cv_dir: Path, out: Path) -> None:
     train, test = data.load_dataset(dataset)
     chosen = {}
-    for name, columns in INPUT_SETS.items():
+    for name, columns in data.input_sets(dataset).items():
         files = sorted(cv_dir.rglob(f"cv_{dataset}_{model}_{name}_shard*.csv"))
         table = pd.concat(pd.read_csv(f) for f in files)
         assert table["setting"].is_unique and len(table) == len(ensembles.settings(model)), (
@@ -88,7 +89,7 @@ def finalize(dataset: str, model: str, cv_dir: Path, out: Path) -> None:
         chosen[name] = params
         fitted = ensembles.make_estimator(model, **params).fit(train[columns], train[TARGET])
         pd.DataFrame({
-            "Date": test.index, "Holi": test["Holi"].to_numpy(),
+            "Date": test.index, "Holi": test["Holi"].to_numpy() if "Holi" in test else test["WeekStatus"].rsub(1).to_numpy(),
             "y": test[TARGET].to_numpy(), "y_hat": fitted.predict(test[columns]),
         }).to_csv(out / f"pred_{dataset}_{model}_{name}.csv", index=False)
         print(f"{dataset} {model} {name}: best {params}", flush=True)
@@ -98,11 +99,11 @@ def finalize(dataset: str, model: str, cv_dir: Path, out: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("command", choices=["probe", "search", "finalize"])
-    parser.add_argument("--dataset", choices=data.DATASETS)
+    parser.add_argument("--dataset", choices=[*data.DATASETS, data.RAW_DATASET])
     parser.add_argument("--model", choices=ensembles.MODELS)
     parser.add_argument("--shard", type=int, default=0)
     parser.add_argument("--of", type=int, default=1)
-    parser.add_argument("--inputs", nargs="+", default=list(INPUT_SETS), choices=list(INPUT_SETS))
+    parser.add_argument("--inputs", nargs="+", help="input sets to search (default: all of the dataset's)")
     parser.add_argument("--cv-dir", type=Path, default=Path("/kaggle/input"))
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
     args = parser.parse_args()
