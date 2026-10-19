@@ -121,7 +121,8 @@ def main() -> None:
                     from sklearn.inspection import PartialDependenceDisplay
 
                     fig, ax = plt.subplots(figsize=(6, 5))
-                    PartialDependenceDisplay.from_estimator(estimator, X, [pair], ax=ax)
+                    # scikit-learn refuses integer columns (Holi) in PDPs; the values are unchanged as floats
+                    PartialDependenceDisplay.from_estimator(estimator, X.astype(float), [pair], ax=ax)
                     save(fig_name, f"Partial dependence of consumption (kWh) on {pair[0]} and {pair[1]}: {name}", args.out)
 
             if (dataset, model) == ("aep", "gbm"):
