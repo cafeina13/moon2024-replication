@@ -8,8 +8,9 @@ on the training part, except Figure 11, which the article draws on the test set.
 
 The published figures were checked against the authors' notebook and differ from it:
 Figures 6a and 7a are two-dimensional PDPs (the notebook draws one-dimensional ones),
-and Figure 11 shows every test hour with inputs ordered by importance (the notebook:
-the first 100 test hours, hierarchical-clustering order). We follow the figures.
+and Figure 11 is CatBoost on all 2,311 training hours with inputs ordered by importance
+(the text says GBM on the test set; the notebook: CatBoost, first 100 test hours,
+clustering order). Our default reproduces the published figure exactly. We follow the figures.
 """
 
 import argparse
@@ -90,10 +91,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
     parser.add_argument("--only", nargs="+", metavar="DATASET:MODEL", help="redo only these, e.g. aep:gbm")
-    parser.add_argument("--fig11-model", default="gbm", choices=ensembles.MODELS,
-                        help="model for Figure 11 (the text says GBM; the authors' notebook uses CatBoost)")
-    parser.add_argument("--fig11-data", default="test", choices=["test", "train"],
-                        help="hours shown in Figure 11 (the text says the test set)")
+    parser.add_argument("--fig11-model", default="catboost", choices=ensembles.MODELS,
+                        help="model for Figure 11 (the published figure is CatBoost; the text says GBM)")
+    parser.add_argument("--fig11-data", default="train", choices=["test", "train"],
+                        help="hours shown in Figure 11 (the published figure: training hours; the text says test)")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 

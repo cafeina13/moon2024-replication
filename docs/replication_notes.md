@@ -31,8 +31,8 @@ where they differ, we follow the published figures.
 | Figure | Authors' notebook | Published figure | What we do |
 |---|---|---|---|
 | 6a, 7a | One-dimensional PDP of Holi / THI | Two-dimensional contour PDP of Holi × Cons_avg / THI × Cons_avg | Two-dimensional |
-| 11 | CatBoost, first 100 test hours, inputs ordered by hierarchical clustering | Hundreds of lines (whole test set), inputs ordered by importance; the text says GBM | GBM, all 978 test hours, importance order |
-| All | SHAP values on the training part | Not visible | Training part, as in the notebook (Figure 11: test part, as the article says) |
+| 11 | CatBoost, first 100 test hours, inputs ordered by hierarchical clustering | The text says GBM on the test set. The figure is **CatBoost on all 2,311 training hours**, importance order: our run with these settings reproduces it exactly (same order of all 15 inputs, same axis range, same lines) | CatBoost, training hours, importance order |
+| All | SHAP values on the training part | Not visible (Figure 11: training part) | Training part. Figures 5a (RF) and 5d (CatBoost) use a random 2,000 of the 20,472 dormitory training hours, because exact SHAP on all of them would take about 6 h and 37 min |
 
 ## University Residential Complex
 
