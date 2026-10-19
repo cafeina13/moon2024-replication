@@ -23,11 +23,14 @@ import sys
 
 COMMIT = "{commit}"
 COMMANDS = {commands!r}
+PIP = {pip!r}
 SRC = "/kaggle/tmp/moon2024-replication"
 
 subprocess.run(["git", "clone", "-q", "{repo}", SRC], check=True)
 subprocess.run(["git", "checkout", "-q", COMMIT], cwd=SRC, check=True)
 subprocess.run([sys.executable, "-m", "pip", "install", "-q", "--no-deps", "-e", SRC], check=True)
+if PIP:
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", *PIP], check=True)
 env = {{**os.environ, "MOON_DATA_DIR": "/kaggle/input"}}
 for command in COMMANDS:
     print("$ moon2024." + command, flush=True)
@@ -40,6 +43,7 @@ def main() -> None:
     parser.add_argument("slug")
     parser.add_argument("--source", action="append", default=[], help="extra kernel whose output is an input")
     parser.add_argument("--gpu", action="store_true")
+    parser.add_argument("--pip", action="append", default=[], help="extra package to install, e.g. scikit-learn==1.9.1")
     parser.add_argument("commands", nargs="+")
     args = parser.parse_args()
 
@@ -51,7 +55,7 @@ def main() -> None:
     folder = HERE / "jobs" / args.slug
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "job.py").write_text(
-        TEMPLATE.format(slug=args.slug, commit=commit, commands=args.commands, repo=REPO), encoding="utf-8"
+        TEMPLATE.format(slug=args.slug, commit=commit, commands=args.commands, pip=args.pip, repo=REPO), encoding="utf-8"
     )
     metadata = {
         "id": f"{USER}/{args.slug}",
