@@ -34,6 +34,17 @@ where they differ, we follow the published figures.
 | 11 | CatBoost, first 100 test hours, inputs ordered by hierarchical clustering | The text says GBM on the test set. The figure is **CatBoost on all 2,311 training hours**, importance order: our run with these settings reproduces it exactly (same order of all 15 inputs, same axis range, same lines) | CatBoost, training hours, importance order |
 | All | SHAP values on the training part | Not visible (Figure 11: training part) | Training part. Figures 5a (RF) and 5d (CatBoost) use a random 2,000 of the 20,472 dormitory training hours, because exact SHAP on all of them would take about 6 h and 37 min |
 
+### How close the figures are
+
+| Figure | Match | Notes |
+|---|---|---|
+| 2, 3 (Taylor) | Point for point | Each shows 15 models (5 ensembles × 3 input sets). The text on Figure 3 says correlation "about 0.6"; the diagram itself shows 0.3-0.5 (ours: 0.28-0.51) |
+| 4, 8, 10, 11 | Exact | Same bars, same order, same individual dots and lines. 10a plots Hour_y's SHAP values coloured by Hour_x |
+| 5 | LightGBM, CatBoost exact order; RF, XGBoost 1-2 neighbouring swaps | RF and CatBoost use a 2,000-hour sample; XGBoost library version |
+| 9 | RF exact; XGBoost, LightGBM nearly; GBM somewhat different | Same models that keep 1-3 point differences in Tables 8-10 |
+| 6, 7 | Close, not exact | PDP contours within about 20 kWh (412 vs 409 at the top). The paper's 6b/7b lack the few extreme SHAP values (Holi up to +135, THI up to +290) that its own Figure 4b, from the same GBM, shows; so 6b/7b come from a different run than 4b. Drawing them on the test year matches worse (PDP 511 vs 412, colour range 950-1,950 vs 800-1,700) |
+| 12, 13 | See the raw-column experiment | The published Figure 13 has 27 inputs: no NSM, rv1 or rv2 |
+
 ## University Residential Complex
 
 | Point | Article | What we do |
