@@ -23,6 +23,17 @@ raw UCI data, equals the authors' published table on all 3,289 hours and 17 colu
 | Wind speed in WCT | Eq (6), unit not stated | m/s as given | Authors' table |
 | Train/test split | Train to 16 April, test from 17 April 2016 | Train ends with the hour labelled 2016-04-17 00:00 (23:00-24:00 on 16 April): 2,311 / 978 hours | Authors' code (`iloc[:2311]`) |
 
+## Figures 4-11 (explainability)
+
+The published figures were compared with the authors' notebook `explainable_AI_energy_consumption_models.ipynb`;
+where they differ, we follow the published figures.
+
+| Figure | Authors' notebook | Published figure | What we do |
+|---|---|---|---|
+| 6a, 7a | One-dimensional PDP of Holi / THI | Two-dimensional contour PDP of Holi × Cons_avg / THI × Cons_avg | Two-dimensional |
+| 11 | CatBoost, first 100 test hours, inputs ordered by hierarchical clustering | Hundreds of lines (whole test set), inputs ordered by importance; the text says GBM | GBM, all 978 test hours, importance order |
+| All | SHAP values on the training part | Not visible | Training part, as in the notebook (Figure 11: test part, as the article says) |
+
 ## University Residential Complex
 
 | Point | Article | What we do |

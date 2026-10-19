@@ -5,6 +5,11 @@
 Each model uses the authors' fixed setting (ensembles.AUTHORS_SETTINGS, which
 reproduces the published tables) on all 15 inputs, fitted on the training part. As in the authors' code, SHAP values are computed
 on the training part, except Figure 11, which the article draws on the test set.
+
+The published figures were checked against the authors' notebook and differ from it:
+Figures 6a and 7a are two-dimensional PDPs (the notebook draws one-dimensional ones),
+and Figure 11 shows every test hour with inputs ordered by importance (the notebook:
+the first 100 test hours, hierarchical-clustering order). We follow the figures.
 """
 
 import argparse
@@ -28,7 +33,6 @@ SEED = 42
 # Above this many estimated minutes, SHAP values are computed on a random sample of training hours
 SHAP_BUDGET_MINUTES = 30
 SAMPLE_ROWS = 2000
-DECISION_PLOT_ROWS = 100  # authors' code: the first 100 test hours
 
 SUMMARY_FIGURES = {
     ("urc", "gbm"): "fig04b", ("urc", "rf"): "fig05a", ("urc", "xgboost"): "fig05b",
@@ -82,6 +86,7 @@ def importance_plot(estimator, model: str, fig_name: str, title: str, out: Path)
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
+    parser.add_argument("--only", nargs="+", metavar="DATASET:MODEL", help="redo only these, e.g. aep:gbm")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -90,6 +95,8 @@ def main() -> None:
         train, test = data.load_dataset(dataset)
         X, y = train[TOTAL], train[TARGET]
         for model in ensembles.MODELS:
+            if args.only and f"{dataset}:{model}" not in args.only:
+                continue
             label = f"{dataset}_{model}"
             estimator = ensembles.make_estimator(model, **ensembles.AUTHORS_SETTINGS[dataset][model]).fit(X, y)
             values, X_used = explain(estimator, X, label, log)
@@ -118,12 +125,12 @@ def main() -> None:
                     save(fig_name, f"Partial dependence of consumption (kWh) on {pair[0]} and {pair[1]}: {name}", args.out)
 
             if (dataset, model) == ("aep", "gbm"):
-                X_test = test[TOTAL].iloc[:DECISION_PLOT_ROWS]
+                X_test = test[TOTAL]
                 test_values = shap.TreeExplainer(estimator)(X_test)
                 plt.figure()
                 shap.decision_plot(test_values.base_values[0], test_values.values, X_test,
-                                   feature_order="hclust", show=False)
-                save("fig11", f"SHAP decision plot, first {DECISION_PLOT_ROWS} test hours (Wh): {name}", args.out)
+                                   feature_order="importance", show=False)
+                save("fig11", f"SHAP decision plot, all test hours (Wh): {name}", args.out)
 
     (args.out / "xai_log.json").write_text(json.dumps(log, indent=2))
 
