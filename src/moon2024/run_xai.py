@@ -92,6 +92,8 @@ def main() -> None:
     parser.add_argument("--only", nargs="+", metavar="DATASET:MODEL", help="redo only these, e.g. aep:gbm")
     parser.add_argument("--fig11-model", default="gbm", choices=ensembles.MODELS,
                         help="model for Figure 11 (the text says GBM; the authors' notebook uses CatBoost)")
+    parser.add_argument("--fig11-data", default="test", choices=["test", "train"],
+                        help="hours shown in Figure 11 (the text says the test set)")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -131,12 +133,12 @@ def main() -> None:
                     save(fig_name, f"Partial dependence of consumption (kWh) on {pair[0]} and {pair[1]}: {name}", args.out)
 
             if (dataset, model) == ("aep", args.fig11_model):
-                X_test = test[TOTAL]
+                X_test = (train if args.fig11_data == "train" else test)[TOTAL]
                 test_values = shap.TreeExplainer(estimator)(X_test)
                 plt.figure()
                 shap.decision_plot(test_values.base_values[0], test_values.values, X_test,
                                    feature_order="importance", show=False)
-                save("fig11", f"SHAP decision plot, all test hours (Wh): {name}", args.out)
+                save("fig11", f"SHAP decision plot, all {args.fig11_data} hours (Wh): {name}", args.out)
 
     (args.out / "xai_log.json").write_text(json.dumps(log, indent=2))
 
