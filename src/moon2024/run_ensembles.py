@@ -3,6 +3,7 @@
   probe     time one fit of each model's slowest settings, to plan the shards
   search    cross-validate one shard of a model's grid on all three input sets
   finalize  pick the best setting per input set, refit on the training part, predict the test part
+  fixed     the same with the authors' fixed settings (these reproduce the published tables)
 """
 
 import argparse
@@ -75,30 +76,42 @@ def search(dataset: str, model: str, index: int, count: int, out: Path, inputs: 
     (out / f"versions_{dataset}_{model}_shard{index}of{count}.json").write_text(json.dumps(versions(), indent=2))
 
 
-def finalize(dataset: str, model: str, cv_dir: Path, out: Path) -> None:
+def fit_and_predict(dataset: str, model: str, chosen: dict, out: Path) -> None:
+    """Refit each input set's chosen setting on the training part and save its test predictions."""
     train, test = data.load_dataset(dataset)
-    chosen = {}
     for name, columns in data.input_sets(dataset).items():
+        fitted = ensembles.make_estimator(model, **chosen[name]).fit(train[columns], train[TARGET])
+        pd.DataFrame({
+            "Date": test.index, "Holi": test["Holi"].to_numpy() if "Holi" in test else test["WeekStatus"].rsub(1).to_numpy(),
+            "y": test[TARGET].to_numpy(), "y_hat": fitted.predict(test[columns]),
+        }).to_csv(out / f"pred_{dataset}_{model}_{name}.csv", index=False)
+        print(f"{dataset} {model} {name}: {chosen[name]}", flush=True)
+    (out / f"best_{dataset}_{model}.json").write_text(json.dumps({"params": chosen, "versions": versions()}, indent=2))
+
+
+def finalize(dataset: str, model: str, cv_dir: Path, out: Path) -> None:
+    """The article's described method: the best cross-validated setting for each input set."""
+    chosen = {}
+    for name in data.input_sets(dataset):
         files = sorted(cv_dir.rglob(f"cv_{dataset}_{model}_{name}_shard*.csv"))
         table = pd.concat(pd.read_csv(f) for f in files)
         assert table["setting"].is_unique and len(table) == len(ensembles.settings(model)), (
             f"{dataset} {model} {name}: {len(table)} of {len(ensembles.settings(model))} settings found"
         )
         table["params"] = table["params"].map(json.loads)
-        params = ensembles.best(table)
-        chosen[name] = params
-        fitted = ensembles.make_estimator(model, **params).fit(train[columns], train[TARGET])
-        pd.DataFrame({
-            "Date": test.index, "Holi": test["Holi"].to_numpy() if "Holi" in test else test["WeekStatus"].rsub(1).to_numpy(),
-            "y": test[TARGET].to_numpy(), "y_hat": fitted.predict(test[columns]),
-        }).to_csv(out / f"pred_{dataset}_{model}_{name}.csv", index=False)
-        print(f"{dataset} {model} {name}: best {params}", flush=True)
-    (out / f"best_{dataset}_{model}.json").write_text(json.dumps({"params": chosen, "versions": versions()}, indent=2))
+        chosen[name] = ensembles.best(table)
+    fit_and_predict(dataset, model, chosen, out)
+
+
+def fixed(dataset: str, model: str, out: Path) -> None:
+    """How the published numbers were produced: the authors' one setting per model, for every input set."""
+    params = ensembles.AUTHORS_SETTINGS[dataset][model]
+    fit_and_predict(dataset, model, {name: params for name in data.input_sets(dataset)}, out)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("command", choices=["probe", "search", "finalize"])
+    parser.add_argument("command", choices=["probe", "search", "finalize", "fixed"])
     parser.add_argument("--dataset", choices=[*data.DATASETS, data.RAW_DATASET])
     parser.add_argument("--model", choices=ensembles.MODELS)
     parser.add_argument("--shard", type=int, default=0)
@@ -113,8 +126,10 @@ def main() -> None:
         probe(args.out)
     elif args.command == "search":
         search(args.dataset, args.model, args.shard, args.of, args.out, args.inputs)
-    else:
+    elif args.command == "finalize":
         finalize(args.dataset, args.model, args.cv_dir, args.out)
+    else:
+        fixed(args.dataset, args.model, args.out)
 
 
 if __name__ == "__main__":

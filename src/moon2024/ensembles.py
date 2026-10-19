@@ -45,6 +45,22 @@ GRIDS = {
 }
 MODELS = list(GRIDS)
 
+# The settings hard-coded in the authors' explainable_AI_energy_consumption_models.ipynb.
+# Used for all three input sets, they reproduce the published AEP tables (CatBoost: all 27
+# values of Tables 8-10 exactly), unlike a per-input-set grid search.
+AUTHORS_SETTINGS = {
+    dataset: {
+        "rf": {"max_features": "sqrt", "n_estimators": 128},
+        "gbm": {"learning_rate": 0.05, "loss": "huber", "max_depth": 5, "n_estimators": 500},
+        "xgboost": {"booster": "gbtree", "colsample_bytree": 1.0, "learning_rate": 0.05, "max_depth": 10,
+                    "n_estimators": 1000, "subsample": 1.0},
+        "lightgbm": {"boosting_type": "gbdt", "colsample_bytree": 1.0, "learning_rate": 0.01, "n_estimators": 1000,
+                     "num_leaves": 64, "subsample": 0.5},
+        "catboost": {"depth": 10, "l2_leaf_reg": 1, "learning_rate": 0.03 if dataset == "aep" else 0.1},
+    }
+    for dataset in ("aep", "urc")
+}
+
 
 def make_estimator(model: str, **params):
     """A fresh estimator with the authors' fixed settings plus the given grid values.
