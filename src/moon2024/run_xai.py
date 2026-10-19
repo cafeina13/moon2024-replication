@@ -1,9 +1,9 @@
 """Figures 4-11: feature importance, SHAP and partial dependence, run on Kaggle.
 
-  python -m moon2024.run_xai [--best-dir /kaggle/input] [--out /kaggle/working]
+  python -m moon2024.run_xai [--out /kaggle/working]
 
-Each model is the best setting for all 15 inputs (from run_ensembles finalize),
-refitted on the training part. As in the authors' code, SHAP values are computed
+Each model uses the authors' fixed setting (ensembles.AUTHORS_SETTINGS, which
+reproduces the published tables) on all 15 inputs, fitted on the training part. As in the authors' code, SHAP values are computed
 on the training part, except Figure 11, which the article draws on the test set.
 """
 
@@ -47,11 +47,6 @@ DEPENDENCE_FIGURES = [
 PDP_FIGURES = [("fig06a", "urc", "gbm", ("Holi", "Cons_avg")), ("fig07a", "urc", "gbm", ("THI", "Cons_avg"))]
 
 
-def best_params(best_dir: Path, dataset: str, model: str) -> dict:
-    (path,) = best_dir.rglob(f"best_{dataset}_{model}.json")
-    return json.loads(path.read_text())["params"]["total"]
-
-
 def save(fig_name: str, title: str, out: Path) -> None:
     plt.suptitle(title, fontsize=10)
     plt.tight_layout()
@@ -86,7 +81,6 @@ def importance_plot(estimator, model: str, fig_name: str, title: str, out: Path)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--best-dir", type=Path, default=Path("/kaggle/input"))
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -97,7 +91,7 @@ def main() -> None:
         X, y = train[TOTAL], train[TARGET]
         for model in ensembles.MODELS:
             label = f"{dataset}_{model}"
-            estimator = ensembles.make_estimator(model, **best_params(args.best_dir, dataset, model)).fit(X, y)
+            estimator = ensembles.make_estimator(model, **ensembles.AUTHORS_SETTINGS[dataset][model]).fit(X, y)
             values, X_used = explain(estimator, X, label, log)
             np.savez_compressed(args.out / f"shap_{label}.npz", values=values.values, base=values.base_values,
                                 rows=X_used.index.astype("int64"))

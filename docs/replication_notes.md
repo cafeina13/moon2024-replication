@@ -46,7 +46,26 @@ raw UCI data, equals the authors' published table on all 3,289 hours and 17 colu
 
 The random forest on AEP reproduces Tables 8, 9, 10 and 12 to every reported digit.
 
-### Differences from the paper and their causes
+### Which settings produced the published tables
+
+The article describes a grid search with 5-fold cross-validation for each model and input set. Run as described,
+it does not reproduce the published tables (AEP differences up to 18 points). Training every grid setting and
+comparing it with the published rows (`run_match`) showed that the published numbers come from **one fixed setting
+per model, used for all three input sets**: the settings hard-coded in the authors' notebook
+`explainable_AI_energy_consumption_models.ipynb` (`ensembles.AUTHORS_SETTINGS`). The main tables use these
+(`run_ensembles fixed`, scikit-learn 1.9.1); the grid-search results are kept as what the described method gives.
+
+| Tables | With the authors' settings |
+|---|---|
+| 5-7, 11 (dormitory) | LightGBM and CatBoost exact; GBM within 0.01; RF within 0.05; XGBoost within 0.08 |
+| 8-10, 12 (AEP) | RF and CatBoost exact (all 27 values each); LightGBM internal within 0.04, others within 1.6; GBM and XGBoost within 1-3 |
+
+The authors' settings are mid-table on AEP under cross-validation *and* on the test set, so they were neither tuned
+on AEP nor picked using the test set. For GBM and LightGBM they rank among the best on the dormitory data
+(tuned there, then reused); for XGBoost and CatBoost they rank near the bottom even there. XGBoost 1.7.6 (before the
+2.0 change of default tree method) does not bring XGBoost closer, so that hypothesis is ruled out.
+
+### Differences from the paper and their causes (grid-search results)
 
 | Where | Difference | Cause |
 |---|---|---|
