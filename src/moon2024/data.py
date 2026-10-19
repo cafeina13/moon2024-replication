@@ -52,18 +52,20 @@ def to_hourly_raw_columns(raw: pd.DataFrame) -> pd.DataFrame:
     Candanedo et al. (2017) for the variables. Energy columns (Appliances,
     lights) are summed over (t - 1 h, t] like the target; every sensor and
     weather column is the reading at t, like the weather in the main table.
-    NSM, WeekStatus and Day_of_week are derived as in Candanedo et al.; the
-    day is taken from the hour's start, WeekStatus is 1 on weekdays and 0 on
-    weekends (the coding in the article's text on Figure 13).
+    The inputs are the 27 shown in the article's Figure 13: lights, T1-T9,
+    RH_1-RH_9, the six weather columns, Day_of_week and WeekStatus. Candanedo
+    et al.'s NSM (seconds since midnight) and the random variables rv1, rv2
+    are not in the figure, so they are left out. The day is taken from the
+    hour's start; WeekStatus is 1 on weekdays and 0 on weekends (the coding in
+    the article's text on Figure 13).
     """
     hour_end = raw.index.ceil("h")
     complete = raw.groupby(hour_end).size() == READINGS_PER_HOUR
     energy = raw[["Appliances", "lights"]].groupby(hour_end).sum()[complete].astype(float)
-    sensors = raw[raw.index.minute == 0].drop(columns=["Appliances", "lights"])
+    sensors = raw[raw.index.minute == 0].drop(columns=["Appliances", "lights", "rv1", "rv2"])
     table = energy.join(sensors, how="left")
 
     day = table.index - pd.Timedelta(hours=1)
-    table["NSM"] = (table.index - table.index.normalize()).total_seconds()
     table["WeekStatus"] = (day.dayofweek < 5).astype(int)
     table["Day_of_week"] = day.dayofweek
     table.index.name = "Date"
