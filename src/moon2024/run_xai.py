@@ -87,6 +87,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
     parser.add_argument("--only", nargs="+", metavar="DATASET:MODEL", help="redo only these, e.g. aep:gbm")
+    parser.add_argument("--fig11-model", default="gbm", choices=ensembles.MODELS,
+                        help="model for Figure 11 (the text says GBM; the authors' notebook uses CatBoost)")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -125,7 +127,7 @@ def main() -> None:
                     PartialDependenceDisplay.from_estimator(estimator, X.astype(float), [pair], ax=ax)
                     save(fig_name, f"Partial dependence of consumption (kWh) on {pair[0]} and {pair[1]}: {name}", args.out)
 
-            if (dataset, model) == ("aep", "gbm"):
+            if (dataset, model) == ("aep", args.fig11_model):
                 X_test = test[TOTAL]
                 test_values = shap.TreeExplainer(estimator)(X_test)
                 plt.figure()
