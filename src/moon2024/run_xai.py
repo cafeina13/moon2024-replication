@@ -137,7 +137,8 @@ def main() -> None:
                 test_values = shap.TreeExplainer(estimator)(X_test)
                 plt.figure()
                 shap.decision_plot(test_values.base_values[0], test_values.values, X_test,
-                                   feature_order="importance", show=False)
+                                   feature_order="importance", show=False,
+                                   ignore_warnings=True)  # SHAP refuses > 2,000 lines otherwise
                 save("fig11", f"SHAP decision plot, all {args.fig11_data} hours (Wh): {name}", args.out)
 
     (args.out / "xai_log.json").write_text(json.dumps(log, indent=2))
