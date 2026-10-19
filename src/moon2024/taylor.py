@@ -2,8 +2,8 @@
 
   python -m moon2024.taylor RESULTS_DIR [--out docs/figures]
 
-Uses the models trained on all 15 inputs (the article does not say which input
-set the diagrams show; all 15 is the configuration it reports as best).
+Like the published figures, each diagram shows all 15 models: five ensembles
+times three input sets (external, internal, total).
 A Taylor diagram places each model by the standard deviation of its predictions
 (distance from the origin) and their correlation with the actual values (angle);
 the distance to the "Observed" point is the centred RMSE.
@@ -23,18 +23,20 @@ from . import paper
 from .compare import DATASET_NAMES
 
 FIGURES = {"urc": ("fig02", "kWh"), "aep": ("fig03", "Wh")}
-COLOURS = ["#3b6ea8", "#d1495b", "#edae49", "#00798c", "#66a182"]
+INPUTS = ["total", "external", "internal"]
 
 
 def stats(results: Path, dataset: str) -> pd.DataFrame:
     rows = {}
-    for model in paper.MODEL_NAMES:
-        pred = pd.read_csv(results / f"pred_{dataset}_{model}_total.csv")
-        rows[model] = {
-            "std": pred["y_hat"].std(ddof=0),
-            "corr": np.corrcoef(pred["y"], pred["y_hat"])[0, 1],
-            "crmse": np.sqrt(np.mean(((pred["y_hat"] - pred["y_hat"].mean()) - (pred["y"] - pred["y"].mean())) ** 2)),
-        }
+    for model, model_name in paper.MODEL_NAMES.items():
+        for inputs in INPUTS:
+            pred = pd.read_csv(results / f"pred_{dataset}_{model}_{inputs}.csv")
+            error = (pred["y_hat"] - pred["y_hat"].mean()) - (pred["y"] - pred["y"].mean())
+            rows[f"{model_name} ({inputs})"] = {
+                "std": pred["y_hat"].std(ddof=0),
+                "corr": np.corrcoef(pred["y"], pred["y_hat"])[0, 1],
+                "crmse": np.sqrt(np.mean(error**2)),
+            }
     rows["observed"] = {"std": pred["y"].std(ddof=0), "corr": 1.0, "crmse": 0.0}
     return pd.DataFrame(rows).T
 
@@ -62,10 +64,11 @@ def taylor_diagram(table: pd.DataFrame, title: str, unit: str, path: Path) -> No
     ax.clabel(contours, fmt="%.0f", fontsize=7)
 
     ax.plot(0, ref, "k*", markersize=14, label="Observed")
-    for colour, (model, row) in zip(COLOURS, table.drop(index="observed").iterrows()):
-        ax.plot(np.arccos(row["corr"]), row["std"], "o", color=colour, markersize=9,
-                label=f"{paper.MODEL_NAMES[model]} (r = {row['corr']:.2f})")
-    ax.legend(loc="upper right", bbox_to_anchor=(1.35, 1.1), fontsize=8)
+    colours = plt.cm.tab20(np.linspace(0, 1, 20))
+    for colour, (label, row) in zip(colours, table.drop(index="observed").iterrows()):
+        ax.plot(np.arccos(row["corr"]), row["std"], "o", color=colour, markersize=8,
+                label=f"{label}, r = {row['corr']:.2f}")
+    ax.legend(loc="upper left", bbox_to_anchor=(1.05, 1.1), fontsize=7)
     ax.set_title(title, fontsize=10, pad=30)
     fig.savefig(path, dpi=200, bbox_inches="tight")
     plt.close(fig)

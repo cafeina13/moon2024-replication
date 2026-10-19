@@ -47,7 +47,7 @@ DEPENDENCE_FIGURES = [
     # (figure, dataset, model, feature, colour by)
     ("fig06b", "urc", "gbm", "Holi", "Cons_avg"),
     ("fig07b", "urc", "gbm", "THI", "Cons_avg"),
-    ("fig10a", "aep", "catboost", "Hour_x", "Hour_y"),
+    ("fig10a", "aep", "catboost", "Hour_y", "Hour_x"),  # published figure: Hour_y's SHAP values, coloured by Hour_x
     ("fig10b", "aep", "catboost", "Holi", "Hour_y"),
 ]
 PDP_FIGURES = [("fig06a", "urc", "gbm", ("Holi", "Cons_avg")), ("fig07a", "urc", "gbm", ("THI", "Cons_avg"))]
@@ -93,6 +93,8 @@ def main() -> None:
     parser.add_argument("--only", nargs="+", metavar="DATASET:MODEL", help="redo only these, e.g. aep:gbm")
     parser.add_argument("--fig11-model", default="catboost", choices=ensembles.MODELS,
                         help="model for Figure 11 (the published figure is CatBoost; the text says GBM)")
+    parser.add_argument("--fig67-data", default="train", choices=["train", "test"],
+                        help="hours used for Figures 6 and 7 (PDP and SHAP dependence)")
     parser.add_argument("--fig11-data", default="train", choices=["test", "train"],
                         help="hours shown in Figure 11 (the published figure: training hours; the text says test)")
     args = parser.parse_args()
@@ -119,9 +121,14 @@ def main() -> None:
             shap.summary_plot(values, X_used, show=False, plot_size=(6, 5))
             save(SUMMARY_FIGURES[dataset, model], f"SHAP summary: {name}", args.out)
 
+            # Figures 6 and 7 can be drawn on the test hours (see --fig67-data)
+            on_test = args.fig67_data == "test" and dataset == "urc"
+            if on_test and (dataset, model) == ("urc", "gbm"):
+                test_values = shap.TreeExplainer(estimator)(test[TOTAL])
             for fig_name, d, m, feature, colour in DEPENDENCE_FIGURES:
                 if (d, m) == (dataset, model):
-                    shap.dependence_plot(feature, values.values, X_used, interaction_index=colour, show=False)
+                    shown, shown_X = (test_values.values, test[TOTAL]) if on_test else (values.values, X_used)
+                    shap.dependence_plot(feature, shown, shown_X, interaction_index=colour, show=False)
                     save(fig_name, f"SHAP dependence of {feature} (colour: {colour}): {name}", args.out)
 
             for fig_name, d, m, pair in PDP_FIGURES:
@@ -130,7 +137,7 @@ def main() -> None:
 
                     fig, ax = plt.subplots(figsize=(6, 5))
                     # scikit-learn refuses integer columns (Holi) in PDPs; the values are unchanged as floats
-                    PartialDependenceDisplay.from_estimator(estimator, X.astype(float), [pair], ax=ax)
+                    PartialDependenceDisplay.from_estimator(estimator, (test[TOTAL] if on_test else X).astype(float), [pair], ax=ax)
                     save(fig_name, f"Partial dependence of consumption (kWh) on {pair[0]} and {pair[1]}: {name}", args.out)
 
             if (dataset, model) == ("aep", args.fig11_model):
