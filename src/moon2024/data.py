@@ -78,3 +78,17 @@ def split_aep(table: pd.DataFrame):
 
 def split_urc(table: pd.DataFrame):
     return split(table, test_start=URC_TEST_START)
+
+
+DATASETS = ["aep", "urc"]
+
+
+def load_dataset(name: str):
+    """(train, test) feature tables. AEP is rebuilt from the raw data; URC is the authors' table."""
+    from .features import build_features
+
+    if name == "aep":
+        return split_aep(build_features(to_hourly(load_raw_aep())))
+    if name == "urc":
+        return split_urc(load_authors_urc())
+    raise ValueError(f"unknown dataset {name!r}")

@@ -14,6 +14,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8"]
+# Preinstalled on Kaggle; versions used are recorded with each run's output
+models = ["scikit-learn", "xgboost", "lightgbm", "catboost"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
