@@ -30,9 +30,10 @@ from .compare import DATASET_NAMES as DATASET_TITLES
 from .features import TARGET, TOTAL
 
 SEED = 42
-# Above this many estimated minutes, SHAP values are computed on a random sample of training hours
+# When SHAP on all training hours would take longer than this, a random sample of hours is used,
+# as large as fits the budget (but at least MIN_SAMPLE_ROWS)
 SHAP_BUDGET_MINUTES = 30
-SAMPLE_ROWS = 2000
+MIN_SAMPLE_ROWS = 500
 
 SUMMARY_FIGURES = {
     ("urc", "gbm"): "fig04b", ("urc", "rf"): "fig05a", ("urc", "xgboost"): "fig05b",
@@ -60,13 +61,15 @@ def save(fig_name: str, title: str, out: Path) -> None:
 
 
 def explain(estimator, X: pd.DataFrame, label: str, log: dict) -> tuple[shap.Explanation, pd.DataFrame]:
-    """SHAP values on X, or on a random sample of it when the full set would exceed the budget."""
+    """SHAP values on X, or on the largest random sample of it that fits the time budget."""
     explainer = shap.TreeExplainer(estimator)
     started = time.time()
     explainer(X.iloc[:50])
-    minutes = (time.time() - started) / 50 * len(X) / 60
+    seconds_per_row = (time.time() - started) / 50
+    minutes = seconds_per_row * len(X) / 60
     if minutes > SHAP_BUDGET_MINUTES:
-        X = X.sample(SAMPLE_ROWS, random_state=SEED).sort_index()
+        rows = max(MIN_SAMPLE_ROWS, int(SHAP_BUDGET_MINUTES * 60 / seconds_per_row))
+        X = X.sample(min(rows, len(X)), random_state=SEED).sort_index()
     started = time.time()
     values = explainer(X)
     log[label] = {"rows": len(X), "estimated_full_minutes": round(minutes, 1), "seconds": round(time.time() - started, 1)}
