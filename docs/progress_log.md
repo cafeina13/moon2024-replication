@@ -174,3 +174,33 @@ are in [results/](results/).
 
 **Open**
 - Monday talking points; final report in Turkish.
+
+---
+
+## 2026-10-21: report, audits, beyond the paper
+
+**Done**
+- Replication report `docs/report.html`, generated from the saved outputs: every table cell ours vs the paper,
+  every figure side by side, the article's unsupported statements with quotes.
+- Independent audits (agents with no knowledge of the conversation, one part at a time), as in the first capstone:
+  part 1 (report tables, README, results) 14 findings, part 2 (figures, paper issues, notes) 20 findings; verified
+  and fixed, recorded in `docs/audit/audit1.md`. Part 3 (this log, walkthroughs) still to run.
+- Per-epoch deep-network runs (`run_deep --track`) and stopping rules (`stopping.py`).
+- Significance tests (`significance.py`): Diebold-Mariano and a day-block bootstrap.
+
+**Results**
+- The paper's Figure 12 R² is the squared correlation of in-sample predictions (LightGBM 0.831 = 0.831; RF 0.963 vs
+  0.964), found by following up an audit finding.
+- Stopping: test error usually bottoms out within the first ~20 epochs; patience 10 is the best rule tried (mean
+  MAPE 61.2 vs 115.9 at epoch 100). The early-stopping gain comes from stopping, not from the 10% smaller training
+  set. No epoch reaches the paper's MAPE.
+- Significance: AEP GBM vs CatBoost not significant (p 0.32-0.45); the ensemble-vs-deep and all-inputs-vs-external
+  gaps are.
+
+**Problems and solutions**
+
+| Problem | Cause | Solution |
+|---|---|---|
+| Hand-typed ranges and "all/every" claims wrong in several documents | Written from memory, checked by their author | Numbers in the report computed by code; independent audits |
+| Kaggle downloads broke off | Connection at about 5 KB/s with 25% packet loss | Retried after switching networks |
+

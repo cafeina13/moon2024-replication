@@ -55,6 +55,8 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
 | `src/moon2024/run_xai.py`, `taylor.py`, `run_raw_figures.py` | Figures 2-13 |
 | `src/moon2024/run_deep.py` | The ten deep networks (Tables 13-14) |
 | `src/moon2024/paper.py`, `compare.py` | The published tables, and ours next to them |
+| `src/moon2024/report.py` | The replication report, `docs/report.html` |
+| `src/moon2024/significance.py`, `stopping.py` | Beyond the paper: significance tests; stopping rules on the per-epoch deep-network runs |
 | `tests/` | Table 1, the authors' feature table, the split, leakage and metric checks |
 | `kaggle/` | Data download and one generated folder per Kaggle job; heavy steps run there, not locally |
 | `docs/` | Replication notes, progress log, results tables, figures |
