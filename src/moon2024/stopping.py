@@ -68,7 +68,7 @@ def choose(epochs: pd.DataFrame) -> dict[str, int]:
         up[t] = val[t] > val[t - STRIP] and val[t - STRIP] > val[t - 2 * STRIP]
 
     return {
-        "Epoch 100 (article)": last,
+        "Epoch 100 (the article's epoch count, on 90% of the data)": last,
         "Patience 10 (authors' notebook)": stop_then_restore(since_best >= 10),
         "Lowest validation loss, all 100 epochs": int(np.argmin(val)),
         "Epoch 10": 9,

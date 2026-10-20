@@ -19,10 +19,10 @@ are in [results/](results/).
 | Taylor diagrams (Figs 2–3) | Done | Point for point |
 | SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
 | Raw-column experiment (Figs 12–13) | Done | RF and Fig 13 very close; paper's R² shown to be in-sample |
-| Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); values mostly within 1 point |
+| Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); 16 of 30 values within 1 point; our LSTM far better, our Bi-LSTM-TCN unstable |
 | Deep networks, AEP (Table 14) | Done | CatBoost best on CVRMSE and NMAE, as in the paper; on MAPE six of the paper's networks beat CatBoost, none of ours do; overfit at 100 epochs; with the notebook early stopping CVRMSE comes close to the paper's, MAPE stays 6–35 points higher |
 | Wrap-up (figures, README) | Done | – |
-| Report | Not started | – |
+| Report (`docs/report.html`) | Done; audited (`docs/audit/audit1.md`) | – |
 
 ---
 
@@ -36,7 +36,7 @@ are in [results/](results/).
   (the laptop is only used for light work), data downloaded and stored inside Kaggle.
 - Built the hourly AEP table and the article's 15 inputs from the raw UCI data, with automated tests.
 - Ran the article's grid search with 5-fold cross-validation for 5 models × 3 input sets × 2 datasets
-  (about 10,000 model fits for XGBoost alone), split over 13 Kaggle jobs.
+  (7,290 cross-validation fits per dataset for XGBoost alone: 486 settings × 5 folds × 3 input sets), split over 13 Kaggle jobs.
 - Wrote the comparison tables (ours vs the paper, cell by cell).
 
 **Results**
@@ -76,7 +76,7 @@ are in [results/](results/).
 **Results**
 - **Main finding:** the published tables do not come from the grid search the article describes. They come from one
   fixed setting per model (hard-coded in the authors' notebook), reused for all input sets. With those settings:
-  CatBoost reproduces all 27 AEP values exactly; the dormitory tables match within 0.01–0.08.
+  CatBoost reproduces all 27 AEP values exactly; the dormitory tables match within 0.00–0.08.
 - The authors' settings are mid-ranked on AEP under cross-validation and on the test set: not tuned on AEP, and not
   chosen by looking at the test set.
 - Figure 11 is CatBoost on the *training* hours: reproduced exactly. The article's text says GBM on the test set.
@@ -116,16 +116,16 @@ are in [results/](results/).
 - Fig 13 now matches closely (same top 7 with two swaps, same bottom 3); RF in Fig 12 almost identical
   (in-sample R² 0.930 vs 0.964). Held-out R² of every model ≤ 0.05 (RF −1.99).
 - Dormitory deep networks: all worse than GBM, as in the paper (MAPE 6.86–8.88 with 24th-hour scoring vs GBM 5.13).
-  Values differ from Table 13 (paper 6.4–15.1); the authors' notebook scoring (all 24 forecast hours) lands closer to
-  the published numbers, which suggests the table was scored that way, not "24th hour only" as the text says. To be
-  checked on AEP.
+  Values differ from Table 13 (paper 6.4–15.1); a first look suggested the authors' notebook scoring (all 24
+  forecast hours) lands closer to the published numbers. (Corrected 2026-10-21: it is closer on CVRMSE for 7 of 10
+  networks but on MAPE and NMAE for only 3 of 10, so neither scoring is systematically closer.)
 
 **Problems and solutions**
 
 | Problem | Cause | Solution |
 |---|---|---|
-| Deep networks much slower than estimated (about 75 s per epoch on the dormitory data) | Reproducible-GPU setting and data size | Accepted; both jobs fit within Kaggle's 12-hour limit |
-| Bi-LSTM-TCN CVRMSE 31.6 (others about 10) | Predictions of up to 18,452 kWh around Lunar New Year 2018: the authors' networks use linear activations, so outputs are unbounded for unusual inputs | Not a pipeline bug; recorded as a robustness weakness of the architecture |
+| Deep networks much slower than estimated (10.9–103.4 s per epoch on the dormitory data, mean 59) | Reproducible-GPU setting and data size | Accepted; both jobs fit within Kaggle's 12-hour limit |
+| Bi-LSTM-TCN CVRMSE 31.6 (others about 10) | Predictions of up to 18,452 kWh around Lunar New Year 2018 (17–18 February, plus 3–4 March): the authors' networks use linear activations, so outputs are unbounded for unusual inputs | Not a pipeline bug; recorded as a robustness weakness of the architecture |
 
 **Open**
 - AEP deep networks (Table 14), then the scoring question (24th hour vs all horizons).
@@ -163,8 +163,8 @@ are in [results/](results/).
 
 **Results**
 - With early stopping, nine networks stop after 11–18 epochs. The exploding predictions disappear, and CVRMSE
-  (78–92) comes close to the paper's (81–98); four networks are slightly below the paper's lowest.
-- MAPE improves for 8 of 10 networks (52–73) but stays 6–35 points above the paper's (34–50; median gap about 21). It's driven by
+  (78–92) is lower than the paper's (81–98) for 8 of 10 networks.
+- MAPE improves for 8 of 10 networks (52–73) but stays 6–35 points above the paper's (34–50; median gap about 21). For GRU, it's driven by
   low-consumption hours, where small errors in Wh are large in percent.
 - Every network is still worse than CatBoost on all three metrics.
 
@@ -193,9 +193,11 @@ are in [results/](results/).
   0.964), found by following up an audit finding.
 - Stopping: test error usually bottoms out within the first ~20 epochs; patience 10 is the best rule tried (mean
   MAPE 61.2 vs 115.9 at epoch 100). The early-stopping gain comes from stopping, not from the 10% smaller training
-  set. No epoch reaches the paper's MAPE.
-- Significance: AEP GBM vs CatBoost not significant (p 0.32-0.45); the ensemble-vs-deep and all-inputs-vs-external
-  gaps are.
+  set. For 9 of 10 networks no epoch reaches the paper's MAPE; LSTM-TCN does (45.1 at epoch 36, paper 50.39).
+- Significance: AEP GBM vs CatBoost not significant (p 0.32-0.45); on the dormitory data the ensemble-vs-deep and
+  all-inputs-vs-external gaps are significant on every loss; on AEP all-inputs-vs-external is (p 0.002-0.041), and
+  ensemble-vs-deep is clear in the bootstrap and on absolute error but borderline on squared error and not significant
+  on percentage error (p 0.095, or 0.175 with the textbook variance).
 
 **Problems and solutions**
 

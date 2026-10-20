@@ -60,3 +60,52 @@ Figs 2-4, 8-11, 13), every article quote, the paper-issue numbers, `paper.py`, m
 
 Result: 20 real, none rejected. Not checkable by the auditor (no saved data): cross-validation rankings, RF's SHAP
 time estimate, the dart timing probe.
+
+## Part 3: progress log, walkthroughs, talking points, "Beyond the paper", audit1.md
+
+Auditor's scripts: scratchpad `audit/part3/`. Checked and correct: every number in `significance.md` and
+`stopping_aep.md` (recomputed with independent code); the stopping rules and the Diebold-Mariano and bootstrap code;
+every verdict number in parts 1-2 of this file. Walkthroughs are gitignored study notes; they were fixed the same way.
+
+| # | Class | Finding | Verdict | Change |
+|---|---|---|---|---|
+| 1 | ERROR | Log: "No epoch reaches the paper's MAPE" | Confirmed: LSTM-TCN below 50.39 in 18 epochs (best 45.1) | "9 of 10" |
+| 2 | ERROR | Every-horizon scoring "closer" still in walkthrough 07 and the log | Confirmed (part 2 #1 fixed the notes only) | Fixed |
+| 3 | MISLABEL | Report: the paper "doesn't say when training stops" | Confirmed: it says 100 epochs | "doesn't mention early stopping or a validation split" |
+| 4 | OVERSTATEMENT | Log: ensemble-vs-deep "significant" | Confirmed for AEP: p 0.095 / 0.044 / 0.016 | Per dataset and loss |
+| 5 | ERROR | Bootstrap days for the dormitory shifted by an hour (its hours are labelled by their start) | Confirmed: 366 days instead of 365 | Fixed; intervals moved by at most 0.04 |
+| 6 | MINOR | Test labelled as HLN but uses Bartlett Newey-West | Confirmed | Described accurately; HLN form shown in brackets |
+| 7 | UNSUPPORTED | 8% simulation not reproducible | Confirmed | `size_check` in the code; the file prints its result (8.0%) |
+| 8 | MINOR | "Bound" row is a bound for MAPE only | Confirmed | Reworded |
+| 9 | MISLABEL | "Epoch 100 (article)" row is the 90%-data run | Confirmed | Relabelled; the article setup's 81.5 stated |
+| 10 | MINOR | Duplicate paragraph | Confirmed | Removed |
+| 11 | OVERSTATEMENT | "Best epoch is very early (1-8)"; "rough daily shape" | Confirmed: that is patience 10's pick; over 100 epochs the minima are later | Reworded |
+| 12 | INCONSISTENCY | "about 0.006" in walkthrough 07 | Confirmed | 0.006-0.018 |
+| 13 | ERROR | "200 Wh hour costs 50 points" in walkthrough 07 | Confirmed | 48% for a 210 Wh hour |
+| 14 | OVERSTATEMENT | Early-stopping CVRMSE "matches" / "comes close" | Confirmed: lower for 8 of 10 | Fixed in all files |
+| 15 | MINOR | Explosions "around Lunar New Year" | Confirmed: also 3-4 March (4 hours) | Added |
+| 16 | MINOR | "24 to 47 hours after the latest input" | Confirmed | Fixed |
+| 17 | UNSUPPORTED | "about 6 hours" SHAP in walkthrough 05 | Confirmed | Fixed |
+| 18 | MINOR | Fig 11 order "almost exactly" | Confirmed: exact | Fixed |
+| 19 | MINOR | Base value "about 590" | Confirmed: 593.4-593.9, GBM 563.8 | Fixed |
+| 20 | INCONSISTENCY | Walkthrough 06 not updated for the R² finding; evidence not saved | Confirmed | Walkthrough fixed; `r2_definition.py` writes `docs/results/fig12_r2.md` |
+| 21 | ERROR | Grid CatBoost "off by 1-5 points" | Confirmed: up to 7.30 | Fixed |
+| 22 | OVERSTATEMENT | Grid RF "Matches" | Confirmed: up to 0.61 (scikit-learn 1.6.1) | Fixed |
+| 23 | INCONSISTENCY | XGBoost version "likely" vs "ruled out" | Confirmed: 1.7.6 is closer only on AEP internal inputs | Stated |
+| 24 | OVERSTATEMENT | Authors' settings "mid-table" everywhere | Confirmed: XGBoost up to 465 of 486 | "none near the top" |
+| 25 | MINOR | "Every result table (5-14) reports three measures" | Confirmed | Fixed |
+| 26 | UNSUPPORTED | Authors' reply to the reviewer quoted | Confirmed: reply not in the text | Cites the article's own sentence |
+| 27 | INCONSISTENCY | Log overview "Report: Not started" | Confirmed | Updated |
+| 28 | OVERSTATEMENT | Dormitory networks "mostly within 1 point" (log, talking points) | Confirmed: 16 of 30 | Fixed |
+| 29 | OVERSTATEMENT | Talking points: "our networks much worse" | Confirmed | MAPE only; LSTM-TCN better |
+| 30 | OVERSTATEMENT | Talking points: one setting, "tables match" | Confirmed | Where exact stated |
+| 31 | ERROR | Talking points: automated tests for scaling and windows | Confirmed: tests cover split and lagged inputs only | Fixed |
+| 32 | OVERSTATEMENT | Talking points: "R² ≈ 0.96" | Confirmed: 0.63-0.96 | Fixed, with the squared-correlation finding |
+| 33 | MINOR | Talking points omit LightGBM | Confirmed | Added |
+| 34 | MINOR | Quote "for each input set" not the article's; experiment "running" | Confirmed | Fixed |
+| 35 | MINOR | "about 10,000 fits for XGBoost" | Confirmed: 7,290 per dataset | Fixed |
+| 36 | MINOR | "about 75 s per epoch" | Confirmed: 10.9-103.4, mean 59.2 | Fixed |
+| 37 | MINOR | "0.01-0.08"; MAPE driver shown for GRU only | Confirmed | Fixed |
+
+Result: 37 real, none rejected. Eight were fixes from parts 1-2 not carried into every file; from now on a fix is
+searched for across all documents before it is called done.

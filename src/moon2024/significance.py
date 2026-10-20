@@ -6,8 +6,10 @@ Two checks on the saved test-set predictions, both allowing for errors in
 neighbouring hours being correlated:
 
 - Diebold-Mariano test: for two models, the per-hour difference in loss, with a
-  Newey-West variance over 24 lags (day-ahead forecasts), compared with a t
-  distribution (Harvey et al.'s small-sample form). Losses: absolute percentage
+  Newey-West variance (Bartlett weights, 24 lags: day-ahead forecasts) and
+  Harvey, Leybourne and Newbold's small-sample factor and t distribution. In
+  brackets: their own form (equal weights over 23 lags), to show how much the
+  variance choice matters. Losses: absolute percentage
   error (the basis of MAPE), squared error (CVRMSE) and absolute error (NMAE).
   Two-sided p-values, not corrected for the several comparisons.
 - Day-block bootstrap: whole test days resampled with replacement; in each draw
@@ -49,6 +51,31 @@ def diebold_mariano(d: np.ndarray, lag: int = LAG) -> float:
     return float(2 * stats.t.sf(abs(statistic), df=n - 1))
 
 
+def diebold_mariano_hln(d: np.ndarray, horizon: int = LAG) -> float:
+    """The textbook Harvey-Leybourne-Newbold form: equal weights over horizon - 1 lags (variance can go negative)."""
+    n = len(d)
+    u = d - d.mean()
+    variance = u @ u / n + 2 * sum((u[k:] @ u[:-k]) / n for k in range(1, horizon))
+    if variance <= 0:
+        return float("nan")
+    statistic = d.mean() / np.sqrt(variance / n)
+    statistic *= np.sqrt((n + 1 - 2 * horizon + horizon * (horizon - 1) / n) / n)
+    return float(2 * stats.t.sf(abs(statistic), df=n - 1))
+
+
+def size_check(runs: int = 400, n: int = 978, phi: float = 0.8, seed: int = 0) -> float:
+    """Share of p < 0.05 when there is no real difference but errors are strongly correlated (AR(1))."""
+    rng = np.random.default_rng(seed)
+    hits = 0
+    for _ in range(runs):
+        e = rng.normal(size=n)
+        x = np.zeros(n)
+        for t in range(1, n):
+            x[t] = phi * x[t - 1] + e[t]
+        hits += diebold_mariano(x) < 0.05
+    return hits / runs
+
+
 def harmonic_mean(y: np.ndarray, f: np.ndarray) -> float:
     return metrics.scores(y, f)["HM"]
 
@@ -75,11 +102,12 @@ def load(path: Path) -> pd.DataFrame:
     return frame
 
 
-def compare(name: str, frames: dict[str, pd.DataFrame], draws: int) -> list[str]:
+def compare(name: str, frames: dict[str, pd.DataFrame], draws: int, end_labelled: bool) -> list[str]:
     index = sorted(set.intersection(*(set(f.index) for f in frames.values())))
     y = frames[next(iter(frames))].loc[index, "y"].to_numpy(float)
     preds = {m: f.loc[index, "y_hat"].to_numpy(float) for m, f in frames.items()}
-    days = (pd.DatetimeIndex(index) - pd.Timedelta(hours=1)).normalize().to_numpy()  # an hour belongs to its start's day
+    # AEP hours are labelled by their end (00:00 closes the previous day), dormitory hours by their start
+    days = (pd.DatetimeIndex(index) - pd.Timedelta(hours=int(end_labelled))).normalize().to_numpy()
     best, boot = bootstrap(y, preds, days, draws)
     lines = [f"### {name}", "",
              f"{len(index)} test hours, {len(np.unique(days))} days. Best by harmonic mean: **{best}**. p-values: "
@@ -90,7 +118,8 @@ def compare(name: str, frames: dict[str, pd.DataFrame], draws: int) -> list[str]
         if m == best:
             ps = ["–"] * 3
         else:
-            ps = [f"{diebold_mariano(loss(y, f) - loss(y, preds[best])):.3f}" for loss in LOSSES.values()]
+            ps = [f"{diebold_mariano(d):.3f} ({diebold_mariano_hln(d):.3f})"
+                  for d in (loss(y, f) - loss(y, preds[best]) for loss in LOSSES.values())]
         share, low, high = boot[m]
         interval = "–" if m == best else f"{low:+.2f} to {high:+.2f}"
         lines.append(f"| {m} | {harmonic_mean(y, f):.2f} | {' | '.join(ps)} | {share:.0%} | {interval} |")
@@ -110,19 +139,22 @@ def main() -> None:
              f"{LAG} lags, two-sided, not corrected for multiple comparisons) and a day-block bootstrap with "
              f"{args.draws} draws. APE, SE, AE: absolute percentage, squared and absolute error, the losses behind MAPE, "
              "CVRMSE and NMAE. \"Ranks first\": share of bootstrap draws in which the model has the lowest harmonic mean. "
-             "In a simulation with strongly correlated errors (AR(1), coefficient 0.8, 978 hours, no real difference) "
-             "the test gave p < 0.05 in 8% of 400 runs instead of 5%, so p-values near 0.05 are weak evidence.",
+             "p-values in brackets: the textbook Harvey-Leybourne-Newbold variance (equal weights, 23 lags). "
+             f"In a simulation with strongly correlated errors (AR(1), coefficient 0.8, 978 hours, no real difference; "
+             f"`size_check`) the main test gave p < 0.05 in {size_check():.1%} of 400 runs instead of 5%, so p-values "
+             "near 0.05 are weak evidence. The reference model is the best on this same test set, which also favours "
+             "finding a difference.",
              ""]
     for dataset in ("urc", "aep"):
         lines += [f"## {DATASET_NAMES[dataset]}", ""]
         ensembles = {paper.MODEL_NAMES[m]: load(fixed / f"pred_{dataset}_{m}_total.csv") for m in paper.MODEL_NAMES}
-        lines += compare(f"Ensembles, all 15 inputs (Table {7 if dataset == 'urc' else 10})", ensembles, args.draws)
+        lines += compare(f"Ensembles, all 15 inputs (Table {7 if dataset == 'urc' else 10})", ensembles, args.draws, dataset == "aep")
 
         y_total = {m: metrics.scores(f["y"], f["y_hat"])["HM"] for m, f in ensembles.items()}
         best = min(y_total, key=y_total.get)
         key = {v: k for k, v in paper.MODEL_NAMES.items()}[best]
         sets = {f"{best}, {s}": load(fixed / f"pred_{dataset}_{key}_{s}.csv") for s in ("total", "internal", "external")}
-        lines += compare(f"Input sets for {best}", sets, args.draws)
+        lines += compare(f"Input sets for {best}", sets, args.draws, dataset == "aep")
 
         deep = {}
         for path in sorted((args.outputs / "deep").rglob(f"pred_deep_{dataset}_*.csv")):
@@ -130,7 +162,7 @@ def main() -> None:
         deep_hm = {m: metrics.scores(f["y"], f["y_hat"])["HM"] for m, f in deep.items()}
         net = min(deep_hm, key=deep_hm.get)
         lines += compare(f"Best ensemble against the best deep network ({net}, 24th hour)",
-                         {best: ensembles[best], net: deep[net]}, args.draws)
+                         {best: ensembles[best], net: deep[net]}, args.draws, dataset == "aep")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text("\n".join(lines), encoding="utf-8", newline="\n")
