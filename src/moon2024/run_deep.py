@@ -1,7 +1,7 @@
 """Tables 13 and 14: ten deep networks with self-attention, run on a Kaggle GPU.
 
   python -m moon2024.run_deep --dataset aep [--models lstm tcn ...] [--epochs 100] [--early-stopping]
-                              [--out /kaggle/working]
+                              [--track] [--out /kaggle/working]
 
 Article: Adam (learning rate 0.001), LeakyReLU, self-attention, random state 42,
 batch size 24, 100 epochs, many-to-many output of the next 24 hours with only the
@@ -12,6 +12,9 @@ notebook differs from the article (early stopping, scoring every horizon), the
 article is followed and the notebook's scoring is also reported. --early-stopping
 trains the notebook's way instead: the last 10% of training windows held out, stop
 when their loss hasn't improved for 10 epochs, keep the best epoch's weights.
+--track keeps the same 10% validation split but trains all epochs and scores the
+test hours after every epoch (epochs_<dataset>_<model>.csv), so stopping rules can
+be compared afterwards without retraining.
 """
 
 import os
@@ -101,6 +104,7 @@ def main() -> None:
     parser.add_argument("--models", nargs="+", default=MODELS, choices=MODELS)
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--early-stopping", action="store_true", help="the authors' notebook: patience 10 on a 10%% validation split")
+    parser.add_argument("--track", action="store_true", help="10%% validation split, all epochs, test scores after every epoch")
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -134,10 +138,25 @@ def main() -> None:
     if args.early_stopping:
         fit_options = {"validation_split": 0.1, "callbacks": [
             keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)]}
+    elif args.track:
+        fit_options = {"validation_split": 0.1}
     else:
         fit_options = {}
 
+    class ScoreEveryEpoch(keras.callbacks.Callback):
+        """After each epoch: training and validation loss, and the 24th-hour test scores."""
+
+        def __init__(self):
+            super().__init__()
+            self.rows = []
+
+        def on_epoch_end(self, epoch, logs=None):
+            y_hat = unscale(self.model.predict(Xw_test, verbose=0)[:, -1, 0])
+            self.rows.append({"epoch": epoch + 1, "loss": logs["loss"], "val_loss": logs["val_loss"],
+                              **metrics.scores(test_hours[TARGET], y_hat)})
+
     log = {"tensorflow": tf.__version__, "epochs": args.epochs, "early_stopping": args.early_stopping,
+           "track": args.track,
            "train_windows": len(train_starts),
            "test_hours": len(test_starts), "models": {}}
     for name in args.models:
@@ -145,8 +164,12 @@ def main() -> None:
         model = build(name, len(TOTAL))
         model.compile(loss="mse", optimizer=keras.optimizers.Adam(learning_rate=0.001))
         started = time.time()
+        tracker = ScoreEveryEpoch()
+        callbacks = fit_options.get("callbacks", []) + ([tracker] if args.track else [])
         history = model.fit(Xw_train, yw_train[..., None], epochs=args.epochs, batch_size=24, verbose=2,
-                            **fit_options)
+                            **{**fit_options, "callbacks": callbacks})
+        if args.track:
+            pd.DataFrame(tracker.rows).to_csv(args.out / f"epochs_{args.dataset}_{name}.csv", index=False)
         seconds = time.time() - started
 
         y_hat = unscale(model.predict(Xw_test, verbose=0)[:, -1, 0])
