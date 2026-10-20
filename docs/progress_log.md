@@ -15,12 +15,12 @@ are in [results/](results/).
 |---|---|---|
 | Data, hourly table, 15 inputs (Tables 1–2) | Done | Exact: Table 1 for both datasets; our inputs equal the authors' published table on all 3,289 hours |
 | Tree ensembles, dormitory (Tables 5–7, 11) | Done | LightGBM, CatBoost exact; GBM within 0.01; RF within 0.05; XGBoost within 0.08 |
-| Tree ensembles, AEP (Tables 8–10, 12) | Done | RF, CatBoost exact; LightGBM-internal within 0.04; GBM, XGBoost within 1–3 points |
+| Tree ensembles, AEP (Tables 8–10, 12) | Done | RF, CatBoost exact; LightGBM within 0.04 on internal inputs, up to 1.6 otherwise; GBM up to 2.7; XGBoost up to 3.3 |
 | Taylor diagrams (Figs 2–3) | Done | Point for point |
 | SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
 | Raw-column experiment (Figs 12–13) | Done | RF and Fig 13 very close; paper's R² shown to be in-sample |
 | Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); values mostly within 1 point |
-| Deep networks, AEP (Table 14) | Done | CatBoost best on CVRMSE and NMAE, as in the paper; on MAPE six of the paper's networks beat CatBoost, none of ours do; overfit at 100 epochs; with the notebook early stopping CVRMSE matches, MAPE 15–25 points higher |
+| Deep networks, AEP (Table 14) | Done | CatBoost best on CVRMSE and NMAE, as in the paper; on MAPE six of the paper's networks beat CatBoost, none of ours do; overfit at 100 epochs; with the notebook early stopping CVRMSE comes close to the paper's, MAPE stays 6–35 points higher |
 | Wrap-up (figures, README) | Done | – |
 | Report | Not started | – |
 
@@ -92,10 +92,10 @@ are in [results/](results/).
 
 | Problem | Cause | Solution |
 |---|---|---|
-| AEP grid-search results 10–18 points better (MAPE) than the paper | The paper used fixed settings, not per-input-set tuning | Found by testing every setting against the published rows; tables rerun with the authors' settings |
+| AEP grid-search results up to 16 MAPE points (18 CVRMSE points) away from the paper, lower than the paper's in 108 of 135 cells | The paper used fixed settings, not per-input-set tuning | Found by testing every setting against the published rows; tables rerun with the authors' settings |
 | Same code, RF slightly different on Kaggle than on the laptop | scikit-learn 1.6.1 vs 1.9.1 | Pinned scikit-learn 1.9.1 (it reproduces the paper) |
 | LightGBM Table 5 two points off | Cross-validation near-tie (10.11% vs 10.32%) flipped | The second-ranked setting reproduces all nine values exactly |
-| XGBoost 1–3 points off | Suspected XGBoost 2.0 default change | Tested XGBoost 1.7.6: not closer, hypothesis ruled out; recorded as unexplained |
+| XGBoost up to 3.3 points off | Suspected XGBoost 2.0 default change | Tested XGBoost 1.7.6: not closer, hypothesis ruled out; recorded as unexplained |
 | SHAP job crashed at Fig 6a | Newer scikit-learn rejects integer columns (Holi) in PDPs | Convert to float for the PDP |
 | Dormitory RF SHAP took 34 min | Time-budget rule picked a fixed 2,000-hour sample without checking it fits | Sample size now chosen to fit the budget |
 | Our Fig 11 did not match | Article text wrong (says GBM, test set) | Drew it four ways; CatBoost on training hours matches exactly |
@@ -163,8 +163,8 @@ are in [results/](results/).
 
 **Results**
 - With early stopping, nine networks stop after 11–18 epochs. The exploding predictions disappear, and CVRMSE
-  (78–93) lands in the paper's range (81–98).
-- MAPE improves for 8 of 10 networks (52–73) but stays 15–25 points above the paper's (34–50). It's driven by
+  (78–92) comes close to the paper's (81–98); four networks are slightly below the paper's lowest.
+- MAPE improves for 8 of 10 networks (52–73) but stays 6–35 points above the paper's (34–50; median gap about 21). It's driven by
   low-consumption hours, where small errors in Wh are large in percent.
 - Every network is still worse than CatBoost on all three metrics.
 

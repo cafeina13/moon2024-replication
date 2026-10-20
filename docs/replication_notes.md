@@ -41,7 +41,7 @@ where they differ, we follow the published figures.
 | 2, 3 (Taylor) | Point for point | Each shows 15 models (5 ensembles × 3 input sets). The text on Figure 3 says correlation "about 0.6"; the diagram itself shows 0.3-0.5 (ours: 0.28-0.51) |
 | 4, 8, 10, 11 | Exact | Same bars, same order, same individual dots and lines. 10a plots Hour_y's SHAP values coloured by Hour_x |
 | 5 | LightGBM, CatBoost exact order; RF, XGBoost 1-2 neighbouring swaps | RF and CatBoost use a 2,000-hour sample; XGBoost library version |
-| 9 | RF exact; XGBoost, LightGBM nearly; GBM somewhat different | Same models that keep 1-3 point differences in Tables 8-10 |
+| 9 | RF exact; XGBoost, LightGBM nearly; GBM somewhat different | Same models that keep differences of up to 2.7 (GBM) and 3.3 (XGBoost) points in Tables 8-10 |
 | 6, 7 | Close, not exact | PDP contours within about 20 kWh (412 vs 409 at the top). The paper's 6b/7b lack the few extreme SHAP values (Holi up to +135, THI up to +290) that its own Figure 4b, from the same GBM, shows; so 6b/7b come from a different run than 4b. Drawing them on the test year matches worse (PDP 511 vs 412, colour range 950-1,950 vs 800-1,700) |
 | 13 | Very close | With the published figure's 27 inputs (no NSM, rv1, rv2): same top 7 (two neighbouring swaps), same bottom 3; the text's claims (lights most, WeekStatus least, RH_1, RH_out, RH_8, RH_3 strong) all hold |
 | 12 | RF very close; others differ | The R² values are in-sample: models are fitted and scored on all 3,289 hours. RF 0.930 vs 0.964, scatter almost identical. GBM 0.31 vs 0.63, XGBoost 0.72 vs 0.79, LightGBM 0.71 vs 0.83, CatBoost 0.98 vs 0.93: settings for this experiment are not given ("fine-tuned with optimal hyperparameter values"), so ours come from the same grid search. **On held-out test weeks every model has R² ≤ 0.05** (RF −1.99): the sensor columns describe the hours they were measured in but do not forecast |
@@ -72,7 +72,7 @@ The random forest on AEP reproduces Tables 8, 9, 10 and 12 to every reported dig
 ### Which settings produced the published tables
 
 The article describes a grid search with 5-fold cross-validation for each model and input set. Run as described,
-it does not reproduce the published tables (AEP differences up to 18 points). Training every grid setting and
+it does not reproduce the published tables (AEP differences up to 16 MAPE points, 18 CVRMSE points). Training every grid setting and
 comparing it with the published rows (`run_match`) showed that the published numbers come from **one fixed setting
 per model, used for all three input sets**: the settings hard-coded in the authors' notebook
 `explainable_AI_energy_consumption_models.ipynb` (`ensembles.AUTHORS_SETTINGS`). The main tables use these
@@ -81,7 +81,7 @@ per model, used for all three input sets**: the settings hard-coded in the autho
 | Tables | With the authors' settings |
 |---|---|
 | 5-7, 11 (dormitory) | LightGBM and CatBoost exact; GBM within 0.01; RF within 0.05; XGBoost within 0.08 |
-| 8-10, 12 (AEP) | RF and CatBoost exact (all 27 values each); LightGBM internal within 0.04, others within 1.6; GBM and XGBoost within 1-3 |
+| 8-10, 12 (AEP) | RF and CatBoost exact (all 27 values each); LightGBM internal within 0.04, others within 1.6; GBM up to 2.7; XGBoost up to 3.3 |
 
 The authors' settings are mid-table on AEP under cross-validation *and* on the test set, so they were neither tuned
 on AEP nor picked using the test set. For GBM and LightGBM they rank among the best on the dormitory data
@@ -123,8 +123,8 @@ test-only windows (notebook). Full tables: [results/table13.md](results/table13.
   [results/table14_early_stopping.md](results/table14_early_stopping.md)):
   - Nine networks stop after 11-18 epochs, so their best epoch is between 1 and 8. TCN runs all 100.
   - The exploding predictions are gone: predictions now range from -258 to 3,235 Wh, with at most 6 negatives.
-  - CVRMSE is now 78-93, inside the paper's range (81-98).
-  - MAPE improves for 8 of 10 networks (52-73 instead of 47-142), but stays about 15-25 points above the paper's
+  - CVRMSE is now 78-92, close to the paper's 81-98 (four networks are slightly below the paper's lowest).
+  - MAPE improves for 8 of 10 networks (52-73 instead of 47-142), but stays 6-35 points above the paper's (median gap about 21)
     (34-50). LSTM and LSTM-TCN get worse.
   - Every network is still worse than CatBoost on all three metrics.
   - So early stopping explains the explosions and the CVRMSE gap, not the whole MAPE gap. Our MAPE comes mostly from
