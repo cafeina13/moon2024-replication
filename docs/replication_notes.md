@@ -43,7 +43,8 @@ where they differ, we follow the published figures.
 | 5 | LightGBM, CatBoost exact order; RF, XGBoost 1-2 neighbouring swaps | RF and CatBoost use a 2,000-hour sample; XGBoost library version |
 | 9 | RF exact; XGBoost, LightGBM nearly; GBM somewhat different | Same models that keep 1-3 point differences in Tables 8-10 |
 | 6, 7 | Close, not exact | PDP contours within about 20 kWh (412 vs 409 at the top). The paper's 6b/7b lack the few extreme SHAP values (Holi up to +135, THI up to +290) that its own Figure 4b, from the same GBM, shows; so 6b/7b come from a different run than 4b. Drawing them on the test year matches worse (PDP 511 vs 412, colour range 950-1,950 vs 800-1,700) |
-| 12, 13 | See the raw-column experiment | The published Figure 13 has 27 inputs: no NSM, rv1 or rv2 |
+| 13 | Very close | With the published figure's 27 inputs (no NSM, rv1, rv2): same top 7 (two neighbouring swaps), same bottom 3; the text's claims (lights most, WeekStatus least, RH_1, RH_out, RH_8, RH_3 strong) all hold |
+| 12 | RF very close; others differ | The R² values are in-sample: models are fitted and scored on all 3,289 hours. RF 0.930 vs 0.964, scatter almost identical. GBM 0.31 vs 0.63, XGBoost 0.72 vs 0.79, LightGBM 0.71 vs 0.83, CatBoost 0.98 vs 0.93: settings for this experiment are not given ("fine-tuned with optimal hyperparameter values"), so ours come from the same grid search. **On held-out test weeks every model has R² ≤ 0.05** (RF −1.99): the sensor columns describe the hours they were measured in but do not forecast |
 
 ## University Residential Complex
 
