@@ -20,7 +20,8 @@ are in [results/](results/).
 | SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
 | Raw-column experiment (Figs 12–13) | Done | RF and Fig 13 very close; paper's R² shown to be in-sample |
 | Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); values mostly within 1 point |
-| Deep networks, AEP (Table 14) | Done | Same conclusion (all worse than CatBoost); values much worse than the paper's (overfitting) |
+| Deep networks, AEP (Table 14) | Done | Same conclusion (all worse than CatBoost); overfit at 100 epochs; with the notebook early stopping CVRMSE matches, MAPE 15–25 points higher |
+| Wrap-up (figures, README) | Done | – |
 | Report | Not started | – |
 
 ---
@@ -148,8 +149,26 @@ are in [results/](results/).
 
 | Problem | Cause | Solution |
 |---|---|---|
-| AEP networks predict −4,113 to 6,077 Wh (actual 10–1,100) | Overfitting: about 2,300 training windows, 100 epochs, no early stopping; linear activations leave outputs unbounded | Recorded. The authors' notebook uses early stopping, which the article doesn't mention; likely the reason for the gap, not tested |
+| AEP networks predict −4,113 to 6,077 Wh (actual 10–1,100) | Overfitting: about 2,300 training windows, 100 epochs, no early stopping; linear activations leave outputs unbounded | Tested the authors' notebook early stopping (next entry) |
+
+---
+
+## 2026-10-20/21: early-stopping test, wrap-up
+
+**Done**
+- Added `run_deep --early-stopping` (the authors' notebook settings) and reran the ten AEP networks on Kaggle.
+- Wrap-up: final figures in `docs/figures`, results summary and code map in the README.
+
+**Results**
+- With early stopping, nine networks stop after 11–18 epochs. The exploding predictions disappear, and CVRMSE
+  (78–93) lands in the paper's range (81–98).
+- MAPE improves for 8 of 10 networks (52–73) but stays 15–25 points above the paper's (34–50). It's driven by
+  low-consumption hours, where small errors in Wh are large in percent.
+- Every network still loses to CatBoost.
+
+**Decisions**
+- The main Table 14 stays the article's 100-epoch run. The early-stopping run is reported next to it as a diagnosis
+  (`docs/results/table14_early_stopping.md`).
 
 **Open**
-- Wrap-up: final figures into the repository, results summary in the README.
 - Monday talking points; final report in Turkish.

@@ -35,7 +35,9 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
 - **The Conclusions contradict the tables.** For example, they name GBM with external inputs as best on AEP, while
   Tables 10 and 12 show CatBoost with all 15 inputs.
 - **Deep networks on AEP overfit** when trained for the article's 100 epochs. The authors' notebook uses early
-  stopping, which the article doesn't mention.
+  stopping, which the article doesn't mention. With it, the exploding predictions disappear and CVRMSE matches the
+  paper's range, though MAPE stays higher
+  ([table14_early_stopping.md](docs/results/table14_early_stopping.md)).
 
 ## Layout
 

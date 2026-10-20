@@ -117,7 +117,20 @@ test-only windows (notebook). Full tables: [results/table13.md](results/table13.
   training windows and 100 epochs without early stopping, the networks overfit. Their linear activations then let
   outputs run unbounded on unfamiliar inputs (the same mechanism as the dormitory Bi-LSTM-TCN at Lunar New Year). The
   notebook's early stopping on a 10% validation split probably kept the authors' networks from overfitting this way.
-  We haven't tested this.
+- **Early stopping, tested** (`run_deep --early-stopping`, the notebook's settings: last 10% of training windows
+  for validation, patience 10, best weights restored;
+  [results/table14_early_stopping.md](results/table14_early_stopping.md)):
+  - Nine networks stop after 11-18 epochs, so their best epoch is between 1 and 8. TCN runs all 100.
+  - The exploding predictions are gone: predictions now range from -258 to 3,235 Wh, with at most 6 negatives.
+  - CVRMSE is now 78-93, inside the paper's range (81-98).
+  - MAPE improves for 8 of 10 networks (52-73 instead of 47-142), but stays about 15-25 points above the paper's
+    (34-50). LSTM and LSTM-TCN get worse.
+  - Every network still loses to CatBoost (41.35).
+  - So early stopping explains the explosions and the CVRMSE gap, not the whole MAPE gap. Our MAPE comes mostly from
+    low-consumption hours: for GRU the mean percentage error is 84% on the lowest quarter of hours and 42% on the
+    rest. A forecast that overshoots by 100 Wh at a 200 Wh hour costs 50 MAPE points. The remaining difference is
+    within what random initialisation and library versions can produce on 2,300 windows, but we can't separate those
+    causes.
 - **Scoring question unresolved.** On the dormitory data, every-horizon scoring is closer to Table 13 for most
   networks, which hints that the paper scored the notebook's way. On AEP neither scoring is systematically closer.
 - Not reproducible exactly in any case: random initialisation, GPU arithmetic and library versions (unknown for the
