@@ -108,7 +108,8 @@ test-only windows (notebook). Full tables: [results/table13.md](results/table13.
 | Best ensemble (ours = paper) | GBM MAPE 5.13 | CatBoost MAPE 41.35 |
 | Our networks, MAPE (24th hour) | 6.9-8.9 | 46.9-141.6 |
 | Paper's networks, MAPE | 6.4-15.1 | 34.3-50.4 |
-| Conclusion "ensemble beats every network" | Holds | Holds |
+| Networks that beat the best ensemble, paper | None, on any metric | On MAPE six (34.31-40.97 vs 41.35); none on CVRMSE or NMAE |
+| Networks that beat the best ensemble, ours | None, on any metric | None, on any metric (also with early stopping) |
 
 - **Values aren't reproduced.** On the dormitory data ours are close (most within 1 point). On AEP ours are much
   worse than the paper's (e.g. Bi-GRU 141.6 vs 48.2).
@@ -125,7 +126,7 @@ test-only windows (notebook). Full tables: [results/table13.md](results/table13.
   - CVRMSE is now 78-93, inside the paper's range (81-98).
   - MAPE improves for 8 of 10 networks (52-73 instead of 47-142), but stays about 15-25 points above the paper's
     (34-50). LSTM and LSTM-TCN get worse.
-  - Every network still loses to CatBoost (41.35).
+  - Every network is still worse than CatBoost on all three metrics.
   - So early stopping explains the explosions and the CVRMSE gap, not the whole MAPE gap. Our MAPE comes mostly from
     low-consumption hours: for GRU the mean percentage error is 84% on the lowest quarter of hours and 42% on the
     rest. A forecast that overshoots by 100 Wh at a 200 Wh hour costs 50 MAPE points. The remaining difference is

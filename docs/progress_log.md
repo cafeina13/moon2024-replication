@@ -20,7 +20,7 @@ are in [results/](results/).
 | SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
 | Raw-column experiment (Figs 12–13) | Done | RF and Fig 13 very close; paper's R² shown to be in-sample |
 | Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); values mostly within 1 point |
-| Deep networks, AEP (Table 14) | Done | Same conclusion (all worse than CatBoost); overfit at 100 epochs; with the notebook early stopping CVRMSE matches, MAPE 15–25 points higher |
+| Deep networks, AEP (Table 14) | Done | CatBoost best on CVRMSE and NMAE, as in the paper; on MAPE six of the paper's networks beat CatBoost, none of ours do; overfit at 100 epochs; with the notebook early stopping CVRMSE matches, MAPE 15–25 points higher |
 | Wrap-up (figures, README) | Done | – |
 | Report | Not started | – |
 
@@ -115,7 +115,7 @@ are in [results/](results/).
 **Results**
 - Fig 13 now matches closely (same top 7 with two swaps, same bottom 3); RF in Fig 12 almost identical
   (in-sample R² 0.930 vs 0.964). Held-out R² of every model ≤ 0.05 (RF −1.99).
-- Dormitory deep networks: all worse than GBM, as in the paper (MAPE 6.9–7.3 with 24th-hour scoring vs GBM 5.13).
+- Dormitory deep networks: all worse than GBM, as in the paper (MAPE 6.86–8.88 with 24th-hour scoring vs GBM 5.13).
   Values differ from Table 13 (paper 6.4–15.1); the authors' notebook scoring (all 24 forecast hours) lands closer to
   the published numbers, which suggests the table was scored that way, not "24th hour only" as the text says. To be
   checked on AEP.
@@ -141,7 +141,9 @@ are in [results/](results/).
 - Finished walkthrough 07 (deep networks).
 
 **Results**
-- AEP: all ten networks are worse than CatBoost (MAPE 41.35), so the paper's conclusion holds on both datasets.
+- AEP: all ten networks are worse than CatBoost on all three metrics. In the paper CatBoost wins on CVRMSE and NMAE
+  only; six of its networks have a lower MAPE than CatBoost's 41.35. (Corrected 2026-10-21: first written as "the
+  paper's conclusion holds".)
 - Our AEP values are much worse than the paper's: MAPE 47–142 vs 34–50.
 - The scoring question stays open. On AEP neither scoring is systematically closer to the paper.
 
@@ -164,7 +166,7 @@ are in [results/](results/).
   (78–93) lands in the paper's range (81–98).
 - MAPE improves for 8 of 10 networks (52–73) but stays 15–25 points above the paper's (34–50). It's driven by
   low-consumption hours, where small errors in Wh are large in percent.
-- Every network still loses to CatBoost.
+- Every network is still worse than CatBoost on all three metrics.
 
 **Decisions**
 - The main Table 14 stays the article's 100-epoch run. The early-stopping run is reported next to it as a diagnosis

@@ -21,7 +21,7 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
 | Taylor diagrams (Figs 2-3) | Point for point | [docs/figures](docs/figures) |
 | SHAP, feature importance, PDP (Figs 4-11) | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6-7 close | [docs/figures](docs/figures) |
 | Raw-column experiment (Figs 12-13) | Fig 13 and RF in Fig 12 very close | [docs/figures](docs/figures) |
-| Deep networks (Tables 13-14) | Conclusion holds (the best ensemble beats every network); values close on the dormitory data, much worse on AEP | [docs/results](docs/results) |
+| Deep networks (Tables 13-14) | Dormitory: as in the paper, GBM beats every network on all three metrics; our values are close. AEP: the paper's CatBoost wins on CVRMSE and NMAE but six networks have a lower MAPE; in ours CatBoost wins on all three, and our networks are much worse than the paper's | [docs/results](docs/results) |
 
 **Findings beyond the numbers**
 
