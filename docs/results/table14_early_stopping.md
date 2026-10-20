@@ -1,6 +1,6 @@
 ## Table 14 with early stopping: deep networks, Appliances Energy Prediction
 
-Each metric: ours scored on the 24th forecast hour (the article) / ours scored on every hour of every test window (the authors' notebook) / paper, in %. Trained the authors' notebook way: 10% validation split, patience 10, best weights restored. The last row is the best ensemble (all 15 inputs).
+Each metric: ours scored on the 24th forecast hour (the article) / ours scored on every hour of every test window (the authors' notebook) / paper, in %. Trained the authors' notebook way: the last 10% of training windows held out for validation, patience 10, best weights restored when stopped early (9 of 10 networks; TCN ran all 100 epochs and keeps its last weights). The last row is the best ensemble (all 15 inputs).
 
 | Model | MAPE | CVRMSE | NMAE |
 |---|---|---|---|

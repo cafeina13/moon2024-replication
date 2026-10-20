@@ -45,8 +45,9 @@ FIGURES = {
          "The article says this is GBM on the test set. It reproduces exactly only as CatBoost on the 2,311 training "
          "hours (we drew it four ways)."),
     12: (["fig12"], "RF very close; others differ",
-         "Fitted and scored on all 3,289 hours, so the R² values are in-sample. The article doesn't give this "
-         "experiment's settings, so ours come from the grid search. Held-out R² is in the table below."),
+         "Ours are fitted and scored on all 3,289 hours (in-sample); the article doesn't say how its R² was computed, "
+         "but RF matches closely this way. The article doesn't give this experiment's settings, so ours come from the "
+         "grid search. Held-out R² is in the table below."),
     13: (["fig13"], "Very close",
          "RF SHAP on the 27 raw columns: same top 7 (two neighbouring swaps), same bottom 3."),
 }
@@ -56,12 +57,13 @@ PAPER_ISSUES = [
     ("The described tuning doesn't produce the published tables.",
      "\"Hyperparameters were optimized through a five-fold cross-validation process … GridSearchCV\"",
      "Run as described, the search gives AEP results up to 16 MAPE points (18 CVRMSE points) away from Tables 8–10 "
-     "(see the tuning table). The tables come from one fixed setting per model, hard-coded in the authors' notebook and reused for "
-     "all three input sets."),
+     "(both on weekdays; up to 11.8 points in the harmonic means of the tuning table). The tables come from one fixed "
+     "setting per model and dataset, hard-coded in the authors' explainability notebook and reused for all three "
+     "input sets."),
     ("The Conclusions name the wrong best model for AEP.",
      "\"the GBM model, honed with only external factors, outperformed its counterparts … within the AEP dataset\"",
-     "Tables 10 and 12 give the lowest harmonic mean to CatBoost with all 15 inputs (48.23); GBM with external inputs "
-     "has 50.82."),
+     "Table 12 gives the lowest harmonic mean to CatBoost with all 15 inputs (48.23); GBM with external inputs has "
+     "50.82. (In Table 10, GBM leads on MAPE, RF on CVRMSE, CatBoost on NMAE.)"),
     ("The results text says external inputs gave the lowest errors.",
      "\"the statistical values attained their nadir when external factors were considered\"",
      "In Tables 5–10, all 15 inputs give the lowest value in all 45 dormitory cells and in 38 of 45 AEP cells; external "
@@ -70,9 +72,10 @@ PAPER_ISSUES = [
     ("Figure 11 is described as the wrong model and data.",
      "\"Fig 11 offers a clear interpretation of the GBM model's predictions for the test set\"",
      "The figure reproduces exactly as CatBoost on the training hours."),
-    ("Figure 12's R² values are in-sample.",
+    ("Figure 12's R² values are very probably in-sample.",
      "\"Fig 12 indicates that the RF model achieved the most commendable R2 value\"",
-     "R² up to 0.96 is reached on the hours the models were trained on; on held-out weeks every model scores R² ≤ 0.05."),
+     "The article doesn't say how R² was computed. Refitted and scored on all hours, our RF reaches 0.93 (paper 0.964) "
+     "with an almost identical scatter; on held-out weeks every model scores R² ≤ 0.05."),
     ("The text on Figure 3 overstates the correlation.",
      "\"Although a moderate correlation of about 0.6 was achieved\"",
      "The diagram shows about 0.3–0.5 (ours 0.28–0.51)."),
@@ -90,7 +93,8 @@ PAPER_ISSUES = [
     ("Early stopping isn't mentioned.",
      "\"we ran 100 epochs to balance adequate learning and prevent overfitting\"",
      "The authors' notebook stops training early on a 10% validation split (patience 10). On AEP this matters: "
-     "without it our networks overfit (Table 14 below)."),
+     "trained that way, our networks no longer produce exploding predictions (Table 14 below). The run also trains on "
+     "10% fewer windows, so stopping alone isn't isolated."),
 ]
 
 
@@ -182,7 +186,7 @@ def deep_section(outputs: Path, results: Path) -> str:
     for dataset, (number, rows) in paper.DEEP_TABLES.items():
         runs = [("ours", load_deep(outputs / "deep", dataset), "hour24")]
         if dataset == "aep":
-            runs.append(("ours, early stopping", load_deep(outputs / "deep-es", dataset), "hour24"))
+            runs.append(("ours, notebook early stopping", load_deep(outputs / "deep-es", dataset), "hour24"))
         head = "".join(f"<th>{m}</th>" for m in METRICS)
         body = []
         for model, theirs in rows.items():
@@ -294,9 +298,10 @@ def main() -> None:
         f"published values reproduced exactly; largest difference {c[2]:.2f} points</div>" for d, c in counts.items())
     cards += ('<div class="card"><b>Figures 2–13</b>4, 8, 10, 11 and both Taylor diagrams match exactly; 5, 9 nearly; '
               "6, 7, 13 closely; 12 closely for RF only</div>"
-              '<div class="card"><b>Deep networks</b>Values not reproduced exactly (random initialisation, GPU, library '
-              "versions). Dormitory close. AEP much worse: the networks overfit; early stopping narrows the gap but MAPE stays "
-              "6–35 points higher</div>")
+              '<div class="card"><b>Deep networks</b>Values not reproduced exactly; possible causes (untested): '
+              "initialisation, GPU arithmetic, library versions. Dormitory: eight of ten networks within 1.8 points; our LSTM "
+              "far better, our Bi-LSTM-TCN unstable. AEP: ours worse on MAPE; with the notebook's early stopping, CVRMSE "
+              "lower than the paper's for 8 of 10</div>")
 
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Moon 2024 Replication</title>
@@ -319,14 +324,15 @@ equal the authors' published AEP feature table on all 3,289 hours (automated tes
 <p>Each cell: ours, with the paper's value below. Colour by difference:</p>
 <p class="legend"><span style="background:var(--exact)">exact</span><span style="background:var(--close)">≤ 0.1</span>
 <span style="background:var(--near)">≤ 1</span><span style="background:var(--far)">&gt; 1</span></p>
-<p>W = weekdays, H = holidays and weekends, T = all days; all values in %. Trained with the authors' fixed settings
+<p>W = weekdays, H = holidays and weekends (AEP: weekends only), T = all days; all values in %. Trained with the authors' fixed settings
 (next section).</p>
 {tables}
 
 <h2 id="tuning">Which settings produced the tables</h2>
 <p>The article describes a 5-fold grid search per model and input set. Harmonic mean (all days), in %: <b>grid</b> =
-the search as described, <b>fixed</b> = the single setting per model hard-coded in the authors' notebook, reused for
-every input set. Colour = difference from the paper, as above.</p>
+the search as described, <b>fixed</b> = the single setting per model and dataset hard-coded in the authors' explainability notebook,
+reused for every input set. The grid runs used scikit-learn 1.6.1 and the fixed runs 1.9.1, which alone moves single RF values by
+up to 0.6 points; the large gaps come from the settings. Colour = difference from the paper, as above.</p>
 {tuning_section(results, args.outputs / "ensembles")}
 
 <h2 id="deep">Deep networks: Tables 13–14</h2>
