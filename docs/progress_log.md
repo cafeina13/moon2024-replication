@@ -19,8 +19,8 @@ are in [results/](results/).
 | Taylor diagrams (Figs 2–3) | Done | Point for point |
 | SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
 | Raw-column experiment (Figs 12–13) | Done | RF and Fig 13 very close; paper's R² shown to be in-sample |
-| Deep networks, dormitory (Table 13) | Done, analysing | Same conclusion (all worse than GBM); values differ |
-| Deep networks, AEP (Table 14) | Running | – |
+| Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); values mostly within 1 point |
+| Deep networks, AEP (Table 14) | Done | Same conclusion (all worse than CatBoost); values much worse than the paper's (overfitting) |
 | Report | Not started | – |
 
 ---
@@ -130,3 +130,26 @@ are in [results/](results/).
 - AEP deep networks (Table 14), then the scoring question (24th hour vs all horizons).
 - Walkthrough 07 (deep networks).
 - Weekly report for Monday.
+
+---
+
+## 2026-10-20 (evening): AEP deep networks, Tables 13–14
+
+**Done**
+- Collected the AEP deep-network results; wrote Tables 13 and 14 (ours scored two ways, next to the paper).
+- Finished walkthrough 07 (deep networks).
+
+**Results**
+- AEP: all ten networks are worse than CatBoost (MAPE 41.35), so the paper's conclusion holds on both datasets.
+- Our AEP values are much worse than the paper's: MAPE 47–142 vs 34–50.
+- The scoring question stays open. On AEP neither scoring is systematically closer to the paper.
+
+**Problems and solutions**
+
+| Problem | Cause | Solution |
+|---|---|---|
+| AEP networks predict −4,113 to 6,077 Wh (actual 10–1,100) | Overfitting: about 2,300 training windows, 100 epochs, no early stopping; linear activations leave outputs unbounded | Recorded. The authors' notebook uses early stopping, which the article doesn't mention; likely the reason for the gap, not tested |
+
+**Open**
+- Wrap-up: final figures into the repository, results summary in the README.
+- Monday talking points; final report in Turkish.

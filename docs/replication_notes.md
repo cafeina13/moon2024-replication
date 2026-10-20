@@ -96,6 +96,33 @@ on AEP nor picked using the test set. For GBM and LightGBM they rank among the b
 | Tables 5-7, XGBoost and CatBoost | Ours 0.1-0.7 points better | Likely library versions: XGBoost 2.0 changed the default `tree_method` from exact/approx to `hist`, and CatBoost defaults have changed since the paper's runs. Not yet tested |
 | Figure 12 | Paper's R² of 0.63-0.96 are in-sample | See Figures 12-13 below |
 
+## Deep networks (Tables 13-14)
+
+Ten networks, settings from the article (Adam 0.001, batch 24, 100 epochs, seed 42) and the authors' notebook (14
+units, linear activations + LeakyReLU, 24-hour input window, self-attention). We don't use the notebook's early
+stopping because the article says 100 epochs. Scored two ways: the 24th forecast hour (article) and every horizon of
+test-only windows (notebook). Full tables: [results/table13.md](results/table13.md), [results/table14.md](results/table14.md).
+
+| | Dormitory (Table 13) | AEP (Table 14) |
+|---|---|---|
+| Best ensemble (ours = paper) | GBM MAPE 5.13 | CatBoost MAPE 41.35 |
+| Our networks, MAPE (24th hour) | 6.9-8.9 | 46.9-141.6 |
+| Paper's networks, MAPE | 6.4-15.1 | 34.3-50.4 |
+| Conclusion "ensemble beats every network" | Holds | Holds |
+
+- **Values aren't reproduced.** On the dormitory data ours are close (most within 1 point). On AEP ours are much
+  worse than the paper's (e.g. Bi-GRU 141.6 vs 48.2).
+- **Why AEP is so much worse:** the training loss drops to about 0.006 (scaled), but test predictions range from
+  -4,113 to 6,077 Wh against actual values of 10-1,100 Wh, and up to 106 of 978 are negative. With about 2,300
+  training windows and 100 epochs without early stopping, the networks overfit. Their linear activations then let
+  outputs run unbounded on unfamiliar inputs (the same mechanism as the dormitory Bi-LSTM-TCN at Lunar New Year). The
+  notebook's early stopping on a 10% validation split probably kept the authors' networks from overfitting this way.
+  We haven't tested this.
+- **Scoring question unresolved.** On the dormitory data, every-horizon scoring is closer to Table 13 for most
+  networks, which hints that the paper scored the notebook's way. On AEP neither scoring is systematically closer.
+- Not reproducible exactly in any case: random initialisation, GPU arithmetic and library versions (unknown for the
+  authors), and the notebook doesn't run as published.
+
 ## Metrics
 
 | Point | Article | What we do |
