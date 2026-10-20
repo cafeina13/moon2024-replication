@@ -1,6 +1,7 @@
 """Tables 13 and 14: ten deep networks with self-attention, run on a Kaggle GPU.
 
-  python -m moon2024.run_deep --dataset aep [--models lstm tcn ...] [--epochs 100] [--out /kaggle/working]
+  python -m moon2024.run_deep --dataset aep [--models lstm tcn ...] [--epochs 100] [--early-stopping]
+                              [--out /kaggle/working]
 
 Article: Adam (learning rate 0.001), LeakyReLU, self-attention, random state 42,
 batch size 24, 100 epochs, many-to-many output of the next 24 hours with only the
@@ -8,7 +9,9 @@ batch size 24, 100 epochs, many-to-many output of the next 24 hours with only th
 the previous 24 hours of the 15 inputs as the input sequence, min-max scaling
 fitted on the training part, keras-tcn and keras-self-attention. Where the
 notebook differs from the article (early stopping, scoring every horizon), the
-article is followed and the notebook's scoring is also reported.
+article is followed and the notebook's scoring is also reported. --early-stopping
+trains the notebook's way instead: the last 10% of training windows held out, stop
+when their loss hasn't improved for 10 epochs, keep the best epoch's weights.
 """
 
 import os
@@ -97,6 +100,7 @@ def main() -> None:
     parser.add_argument("--dataset", choices=data.DATASETS, required=True)
     parser.add_argument("--models", nargs="+", default=MODELS, choices=MODELS)
     parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--early-stopping", action="store_true", help="the authors' notebook: patience 10 on a 10%% validation split")
     parser.add_argument("--out", type=Path, default=Path("/kaggle/working"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -127,14 +131,22 @@ def main() -> None:
     test_only = np.arange(N_PAST, len(test) - N_FUTURE + 1)
     Xw_code, yw_code = windows(X_full[n_train:], y_full[n_train:], test_only)
 
-    log = {"tensorflow": tf.__version__, "epochs": args.epochs, "train_windows": len(train_starts),
+    if args.early_stopping:
+        fit_options = {"validation_split": 0.1, "callbacks": [
+            keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)]}
+    else:
+        fit_options = {}
+
+    log = {"tensorflow": tf.__version__, "epochs": args.epochs, "early_stopping": args.early_stopping,
+           "train_windows": len(train_starts),
            "test_hours": len(test_starts), "models": {}}
     for name in args.models:
         keras.utils.set_random_seed(SEED)
         model = build(name, len(TOTAL))
         model.compile(loss="mse", optimizer=keras.optimizers.Adam(learning_rate=0.001))
         started = time.time()
-        history = model.fit(Xw_train, yw_train[..., None], epochs=args.epochs, batch_size=24, verbose=2)
+        history = model.fit(Xw_train, yw_train[..., None], epochs=args.epochs, batch_size=24, verbose=2,
+                            **fit_options)
         seconds = time.time() - started
 
         y_hat = unscale(model.predict(Xw_test, verbose=0)[:, -1, 0])
@@ -146,6 +158,7 @@ def main() -> None:
         code_y = unscale(yw_code).ravel()
         log["models"][name] = {
             "seconds": round(seconds, 1),
+            "epochs_run": len(history.history["loss"]),
             "final_loss": history.history["loss"][-1],
             "hour24": metrics.scores(test_hours[TARGET], y_hat),
             "notebook_scoring": metrics.scores(code_y, code_hat),
