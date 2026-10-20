@@ -30,11 +30,13 @@ FIGURES = {
         "0.3–0.5."),
     4: (["fig04a", "fig04b"], "Exact", "GBM, dormitory: feature importance and SHAP summary."),
     5: (["fig05a", "fig05b", "fig05c", "fig05d"], "Near-exact",
-        "LightGBM and CatBoost in the same order; RF and XGBoost with one or two neighbouring swaps. RF and CatBoost "
-        "SHAP use a random 2,000 of the 20,472 training hours (exact SHAP on all would take hours)."),
+        "LightGBM and CatBoost in the same order; RF with one neighbouring swap; XGBoost with one swap and Temp two "
+        "places higher. RF and CatBoost SHAP use a random 2,000 of the 20,472 training hours (exact SHAP on all was "
+        "estimated above the 30-minute budget)."),
     6: (["fig06a", "fig06b"], "Close",
-        "PDP of Holi × Cons_avg: contour peak 409 vs the paper's 412.24. The paper's 6b lacks the extreme SHAP values "
-        "its own Figure 4b shows for the same GBM, so 6b seems to come from a different run."),
+        "PDP of Holi × Cons_avg: top contour label 409.04 vs the paper's 412.24; levels within about 21. The paper's 6b "
+        "lacks the extreme SHAP values its own Figure 4b shows for the same GBM, so 6b seems to come from a different "
+        "run or subset of hours."),
     7: (["fig07a", "fig07b"], "Close", "PDP of THI × Cons_avg; same remark on 7b as on 6b."),
     8: (["fig08a", "fig08b"], "Exact", "CatBoost, AEP: feature importance and SHAP summary."),
     9: (["fig09a", "fig09b", "fig09c", "fig09d"], "Near-exact",
@@ -44,9 +46,10 @@ FIGURES = {
     11: (["fig11"], "Exact",
          "The article says this is GBM on the test set. It reproduces exactly only as CatBoost on the 2,311 training "
          "hours (we drew it four ways)."),
-    12: (["fig12"], "RF very close; others differ",
-         "Ours are fitted and scored on all 3,289 hours (in-sample); the article doesn't say how its R² was computed, "
-         "but RF matches closely this way. The article doesn't give this experiment's settings, so ours come from the "
+    12: (["fig12"], "RF, LightGBM scatter almost identical; others differ",
+         "Ours are fitted and scored on all 3,289 hours (in-sample). The paper's R² is the squared correlation of these "
+         "in-sample predictions: computed that way, ours give LightGBM 0.831 (paper 0.831) and RF 0.963 (0.964); the "
+         "bars below show the usual R². The article doesn't give this experiment's settings, so ours come from the "
          "grid search. Held-out R² is in the table below."),
     13: (["fig13"], "Very close",
          "RF SHAP on the 27 raw columns: same top 7 (two neighbouring swaps), same bottom 3."),
@@ -72,10 +75,12 @@ PAPER_ISSUES = [
     ("Figure 11 is described as the wrong model and data.",
      "\"Fig 11 offers a clear interpretation of the GBM model's predictions for the test set\"",
      "The figure reproduces exactly as CatBoost on the training hours."),
-    ("Figure 12's R² values are very probably in-sample.",
+    ("Figure 12's R² values are in-sample squared correlations.",
      "\"Fig 12 indicates that the RF model achieved the most commendable R2 value\"",
-     "The article doesn't say how R² was computed. Refitted and scored on all hours, our RF reaches 0.93 (paper 0.964) "
-     "with an almost identical scatter; on held-out weeks every model scores R² ≤ 0.05."),
+     "The article doesn't say how R² was computed. Refitted on all hours, our RF and LightGBM give almost the same "
+     "scatter as the paper's, and the squared correlation of those in-sample predictions gives LightGBM 0.831 (paper "
+     "0.831) and RF 0.963 (0.964); the usual R² is 0.706 and 0.930. Squared correlation ignores bias. On held-out "
+     "weeks every model scores R² ≤ 0.05."),
     ("The text on Figure 3 overstates the correlation.",
      "\"Although a moderate correlation of about 0.6 was achieved\"",
      "The diagram shows about 0.3–0.5 (ours 0.28–0.51)."),

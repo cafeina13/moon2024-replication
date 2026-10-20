@@ -151,7 +151,7 @@ are in [results/](results/).
 
 | Problem | Cause | Solution |
 |---|---|---|
-| AEP networks predict −4,113 to 6,077 Wh (actual 10–1,100) | Overfitting: about 2,300 training windows, 100 epochs, no early stopping; linear activations leave outputs unbounded | Tested the authors' notebook early stopping (next entry) |
+| AEP networks predict −4,113 to 6,077 Wh (actual 210–3,200) | Overfitting: about 2,300 training windows, 100 epochs, no early stopping; linear activations leave outputs unbounded | Tested the authors' notebook early stopping (next entry) |
 
 ---
 

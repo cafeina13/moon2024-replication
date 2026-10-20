@@ -30,9 +30,10 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
   tables come from one fixed setting per model and dataset, hard-coded in the authors' explainability notebook and
   reused for every input set. With those settings RF and CatBoost reproduce exactly and the other models within 3.3
   points (CatBoost on AEP matches all 27 values exactly).
-- **Figure 12's R² values are very probably in-sample.** The article doesn't say how they were computed. Refitted
-  and scored on all hours, our models reach R² 0.31–0.98 (RF 0.93 against the paper's 0.96, with an almost identical
-  scatter); on held-out weeks every model scores R² ≤ 0.05.
+- **Figure 12's R² values are squared correlations of in-sample predictions.** The article doesn't say how they
+  were computed. Refitted on all hours, our RF and LightGBM give almost the same scatter as the paper's, and squaring
+  the correlation gives LightGBM 0.831 (paper 0.831) and RF 0.963 (paper 0.964); the usual R² of the same
+  predictions is 0.706 and 0.930. On held-out weeks every model scores R² ≤ 0.05.
 - **Figure 11 is CatBoost on the training hours**, not GBM on the test set as the text says.
 - **The Conclusions contradict the tables.** For example, they name GBM with external inputs as best on AEP, while
   Table 12 gives CatBoost with all 15 inputs the lowest harmonic mean (in Table 10, GBM, RF and CatBoost each lead

@@ -51,6 +51,8 @@ def main() -> None:
         held_out = pd.read_csv(pred_file)
         r2[model] = {
             "in_sample": r2_score(full[TARGET], fitted),
+            # the paper's values match the squared correlation, not r2_score (LightGBM 0.831, RF 0.963)
+            "in_sample_corr2": float(np.corrcoef(full[TARGET], fitted)[0, 1] ** 2),
             "held_out": r2_score(held_out["y"], held_out["y_hat"]),
             "paper": PAPER_R2[model],
         }
