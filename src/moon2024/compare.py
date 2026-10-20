@@ -1,10 +1,13 @@
 """Our ensemble results next to the paper's Tables 5-12.
 
-  python -m moon2024.compare RESULTS_DIR [--out docs/results]
+  python -m moon2024.compare RESULTS_DIR [--deep DEEP_DIR] [--out docs/results]
 
 RESULTS_DIR holds the pred_<dataset>_<model>_<inputs>.csv files written by
-run_ensembles finalize. Writes one Markdown file per table with our value,
-the paper's value and the difference for every cell.
+run_ensembles. Writes one Markdown file per table with our value, the paper's
+value and the difference for every cell. With --deep (a folder holding the
+deep_<dataset>.json files of run_deep), also writes Tables 13 and 14, scored
+both ways: the 24th forecast hour (the article) and every hour of every window
+(the authors' notebook).
 """
 
 import argparse
@@ -72,9 +75,39 @@ def harmonic_mean_table(results: Path, dataset: str) -> str:
     return "\n".join(lines) + "\n"
 
 
+def deep_table(results: Path, deep: Path, dataset: str) -> str:
+    import json
+
+    number, rows = paper.DEEP_TABLES[dataset]
+    models = {}
+    for path in deep.rglob(f"deep_{dataset}.json"):
+        models.update(json.loads(path.read_text())["models"])
+    lines = [
+        f"## Table {number}: deep networks, {DATASET_NAMES[dataset]}",
+        "",
+        "Each metric: ours scored on the 24th forecast hour (the article) / ours scored on every hour of every "
+        "test window (the authors' notebook) / paper, in %. The last row is the best ensemble (all 15 inputs).",
+        "",
+        "| Model | MAPE | CVRMSE | NMAE |",
+        "|---|---|---|---|",
+    ]
+    for model, theirs in rows.items():
+        if model in models:
+            hour24, notebook = models[model]["hour24"], models[model]["notebook_scoring"]
+            cells = [f"{hour24[m]:.2f} / {notebook[m]:.2f} / {t:.2f}" for m, t in zip(("MAPE", "CVRMSE", "NMAE"), theirs)]
+        elif model in paper.MODEL_NAMES:
+            ours = ensemble_scores(results, dataset, model, "total")
+            cells = [_cell(None if ours is None else ours[f"{m}_T"], t) for m, t in zip(("MAPE", "CVRMSE", "NMAE"), theirs)]
+        else:
+            cells = [f"– / – / {t:.2f}" for t in theirs]
+        lines.append(f"| {model} | " + " | ".join(cells) + " |")
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("results", type=Path)
+    parser.add_argument("--deep", type=Path, help="folder with the deep_<dataset>.json files of run_deep")
     parser.add_argument("--out", type=Path, default=Path("docs/results"))
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -83,6 +116,9 @@ def main() -> None:
         (args.out / f"table{number:02d}.md").write_text(ensemble_table(args.results, dataset, inputs), encoding="utf-8")
     for dataset, (number, _) in paper.HARMONIC_MEAN_TABLES.items():
         (args.out / f"table{number:02d}.md").write_text(harmonic_mean_table(args.results, dataset), encoding="utf-8")
+    if args.deep:
+        for dataset, (number, _) in paper.DEEP_TABLES.items():
+            (args.out / f"table{number:02d}.md").write_text(deep_table(args.results, args.deep, dataset), encoding="utf-8")
     print(f"wrote tables to {args.out}")
 
 
