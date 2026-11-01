@@ -210,7 +210,8 @@ def deep_section(outputs: Path, results: Path) -> str:
             for i, t in enumerate(theirs):
                 beats = model in DEEP_NAMES and t < best[i]
                 inner = "".join(f'<span class="run">{v[i]:.2f}<small>{esc(label)}</small></span>' for label, v in lines)
-                cells.append(f'<td class="deep{" beats" if beats else ""}">{inner}'
+                colour = f" {diff_class(lines[0][1][i], t)}" if lines else ""  # main "ours" line against the paper
+                cells.append(f'<td class="deep{colour}{" beats" if beats else ""}">{inner}'
                              f'<span class="run paperrun">{t:.2f}<small>paper</small></span></td>')
             body.append(f"<tr><th>{esc(name)}</th>{''.join(cells)}</tr>")
         parts.append(f"<h3>Table {number}: {DATASET_NAMES[dataset]}</h3>"
@@ -388,7 +389,8 @@ up to 0.6 points; the large gaps come from the settings. Colour = difference fro
 
 <h2 id="deep">Deep networks: Tables 13–14</h2>
 <p>Ours are scored on the 24th forecast hour, as the article states. MAPE, CVRMSE, NMAE in %. A <b>bold</b> paper
-value marks a network that beats the paper's best ensemble on that metric.</p>
+value marks a network that beats the paper's best ensemble on that metric. Colour: our main value ("ours") against
+the paper's, on the same scale as Tables 5–12; the early-stopping line (AEP) is not coloured.</p>
 {deep_section(args.outputs, results)}
 
 <h2 id="figures">Figures 2–13</h2>
