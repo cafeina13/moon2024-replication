@@ -24,6 +24,14 @@ from .compare import DATASET_NAMES
 
 FIGURES = {"urc": ("fig02", "kWh"), "aep": ("fig03", "Wh")}
 INPUTS = ["total", "external", "internal"]
+# The published figures' colours, in their legend order (models alphabetically, then total, external, internal)
+PAPER_COLOURS = {
+    "CatBoost (total)": "#E41A1C", "CatBoost (external)": "#377EB8", "CatBoost (internal)": "#4DAF4A",
+    "GBM (total)": "#984EA3", "GBM (external)": "#FF7F00", "GBM (internal)": "#FFFF33",
+    "LightGBM (total)": "#A65628", "LightGBM (external)": "#F781BF", "LightGBM (internal)": "#999999",
+    "RF (total)": "#8DD3C7", "RF (external)": "#B3DE69", "RF (internal)": "#BEBADA",
+    "XGBoost (total)": "#FB8072", "XGBoost (external)": "#80B1D3", "XGBoost (internal)": "#FDB462",
+}
 
 
 def stats(results: Path, dataset: str) -> pd.DataFrame:
@@ -51,7 +59,7 @@ def taylor_diagram(table: pd.DataFrame, title: str, unit: str, path: Path) -> No
     ax.set_ylim(0, limit)
 
     # Correlation labels on the arc
-    corrs = np.array([0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 0.99, 1.0])
+    corrs = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0])
     ax.set_xticks(np.arccos(corrs))
     ax.set_xticklabels([f"{c:g}" for c in corrs])
     ax.text(np.pi / 4, limit * 1.12, "Correlation", ha="center", va="center", rotation=-45)
@@ -63,11 +71,11 @@ def taylor_diagram(table: pd.DataFrame, title: str, unit: str, path: Path) -> No
     contours = ax.contour(theta, radius, crmse, levels=5, colors="0.6", linewidths=0.8, linestyles="--")
     ax.clabel(contours, fmt="%.0f", fontsize=7)
 
-    ax.plot(0, ref, "k*", markersize=14, label="Observed")
-    colours = plt.cm.tab20(np.linspace(0, 1, 20))
-    for colour, (label, row) in zip(colours, table.drop(index="observed").iterrows()):
-        ax.plot(np.arccos(row["corr"]), row["std"], "o", color=colour, markersize=8,
-                label=f"{label}, r = {row['corr']:.2f}")
+    ax.plot(0, ref, "o", color="#A020F0", markersize=9, label="Observed")
+    for label, colour in PAPER_COLOURS.items():
+        row = table.loc[label]
+        ax.plot(np.arccos(row["corr"]), row["std"], "o", color=colour, markersize=9, markeredgecolor="0.4",
+                markeredgewidth=0.4, label=f"{label}, r = {row['corr']:.2f}")
     ax.legend(loc="upper left", bbox_to_anchor=(1.05, 1.1), fontsize=7)
     ax.set_title(title, fontsize=10, pad=30)
     fig.savefig(path, dpi=200, bbox_inches="tight")
