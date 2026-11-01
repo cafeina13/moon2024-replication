@@ -112,6 +112,12 @@ def diff_class(ours: float, theirs: float) -> str:
     return "exact" if d < 0.005 else "close" if d <= 0.1 + 1e-9 else "near" if d <= 1 + 1e-9 else "far"
 
 
+def relative_class(ours: float, theirs: float) -> str:
+    """For the deep networks, where exact reproduction isn't expected: the gap as a share of the paper's value."""
+    r = abs(round(ours, 2) - theirs) / theirs
+    return "exact" if r < 1e-9 else "close" if r <= 0.05 else "near" if r <= 0.15 else "far"
+
+
 def cell(ours: float | None, theirs: float) -> str:
     if ours is None:
         return f'<td class="missing">–<span class="paper">{theirs:.2f}</span></td>'
@@ -210,7 +216,7 @@ def deep_section(outputs: Path, results: Path) -> str:
             for i, t in enumerate(theirs):
                 beats = model in DEEP_NAMES and t < best[i]
                 inner = "".join(f'<span class="run">{v[i]:.2f}<small>{esc(label)}</small></span>' for label, v in lines)
-                colour = f" {diff_class(lines[0][1][i], t)}" if lines else ""  # main "ours" line against the paper
+                colour = f" {relative_class(lines[0][1][i], t)}" if lines else ""  # main "ours" line against the paper
                 cells.append(f'<td class="deep{colour}{" beats" if beats else ""}">{inner}'
                              f'<span class="run paperrun">{t:.2f}<small>paper</small></span></td>')
             body.append(f"<tr><th>{esc(name)}</th>{''.join(cells)}</tr>")
@@ -389,8 +395,10 @@ up to 0.6 points; the large gaps come from the settings. Colour = difference fro
 
 <h2 id="deep">Deep networks: Tables 13–14</h2>
 <p>Ours are scored on the 24th forecast hour, as the article states. MAPE, CVRMSE, NMAE in %. A <b>bold</b> paper
-value marks a network that beats the paper's best ensemble on that metric. Colour: our main value ("ours") against
-the paper's, on the same scale as Tables 5–12; the early-stopping line (AEP) is not coloured.</p>
+value marks a network that beats the paper's best ensemble on that metric. Colour: how close our main value ("ours") is
+to the paper's, relative to the paper's value: exact, within 5%, within 15%, more than 15%. (Tables 5–12 use absolute
+points, because there exact reproduction is expected; for neural networks it isn't, and the two datasets' errors
+differ in size.) The early-stopping line (AEP) is not coloured.</p>
 {deep_section(args.outputs, results)}
 
 <h2 id="figures">Figures 2–13</h2>
