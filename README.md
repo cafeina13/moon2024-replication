@@ -13,6 +13,9 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
 
 ## Results
 
+**Report:** every table cell and figure next to the paper's, at
+<https://cafeina13.github.io/moon2024-replication/report.html>.
+
 | Part of the paper | Match | Where |
 |---|---|---|
 | Data, hourly table, 15 inputs (Tables 1-2) | Exact: Table 1 for both datasets; our AEP inputs, built from the raw data, equal the authors' AEP feature table on all 3,289 hours | `tests/` |
