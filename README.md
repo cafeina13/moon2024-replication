@@ -28,26 +28,27 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
 
 **Findings beyond the numbers**
 
-- **The published tables don't come from the tuning the article describes.** A 5-fold grid search per model and
-  input set gives AEP values up to 16 MAPE points (18 CVRMSE points, both on weekdays) away from the paper. The
-  tables come from one fixed setting per model and dataset, hard-coded in the authors' explainability notebook and
-  reused for every input set. With those settings RF and CatBoost reproduce exactly and the other models within 3.3
-  points (CatBoost on AEP matches all 27 values exactly).
-- **Figure 12's R² values are squared correlations of in-sample predictions.** The article doesn't say how they
-  were computed. Refitted on all hours, our RF and LightGBM give almost the same scatter as the paper's, and squaring
+- **The published tables don't come from the tuning the article describes.** A 5-fold grid search per model (run
+  once per input set, as in the authors' code) gives AEP values up to 16 MAPE points (18 CVRMSE points, both on weekdays) away from the paper. One
+  fixed setting per model and dataset, hard-coded in the authors' explainability notebook and reused for every input
+  set, comes much closer: exact for RF and CatBoost on AEP and for LightGBM and CatBoost on the dormitory, and within
+  3.3 points for the others.
+- **For RF and LightGBM, Figure 12's R² values are squared correlations of in-sample predictions.** The article
+  doesn't say how they were computed. Refitted on all hours, our RF and LightGBM give almost the same scatter as the paper's, and squaring
   the correlation gives LightGBM 0.831 (paper 0.831) and RF 0.964 (paper 0.964); the usual R² of the same
-  predictions is 0.706 and 0.930. It does not explain GBM (0.541 vs 0.630) or CatBoost (0.986 vs 0.932); XGBoost is
-  close (0.805 vs 0.786). On held-out weeks every model scores R² ≤ 0.05.
+  predictions is 0.706 and 0.930. GBM (0.541 vs 0.630), XGBoost (0.805 vs 0.786) and CatBoost (0.986 vs 0.932) match
+  neither way, so for them the definition can't be checked. On held-out weeks every model scores R² ≤ 0.05.
 - **Figure 11 is CatBoost on the training hours**, not GBM on the test set as the text says.
-- **The Conclusions contradict the tables.** For example, they name GBM with external inputs as best on AEP, while
-  Table 12 gives CatBoost with all 15 inputs the lowest harmonic mean (in Table 10, GBM, RF and CatBoost each lead
-  on one metric).
+- **The Conclusions and the results section disagree.** The results section says CatBoost performed best on AEP,
+  as Table 12 shows (CatBoost with all 15 inputs, harmonic mean 48.23); the Conclusions name GBM with external inputs,
+  which is best only among the external-input models (50.82).
 - **Deep networks on AEP very likely overfit** when trained for the article's 100 epochs (very low training loss,
   test predictions far outside the actual range). The authors' notebook trains with early stopping on a 10%
-  validation split, which the article doesn't mention. Run that way (which also trains on 10% fewer windows), the
-  exploding predictions disappear and CVRMSE is lower than the paper's for 8 of 10 networks, while MAPE stays 6–35
+  validation split, which the article doesn't mention. Run that way, the extreme
+  predictions disappear (the lowest is −258 Wh, against −4,113 without stopping) and CVRMSE is lower than the paper's for 8 of 10 networks, while MAPE stays 6–35
   points higher
-  ([table14_early_stopping.md](docs/results/table14_early_stopping.md)).
+  ([table14_early_stopping.md](docs/results/table14_early_stopping.md)). A run on the same 90% of windows without
+  stopping shows the gain comes from stopping, not from the smaller training set.
 
 ## Layout
 

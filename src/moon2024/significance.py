@@ -135,13 +135,13 @@ def main() -> None:
     fixed = args.outputs / "fixed"
 
     lines = ["## Significance of the differences (beyond the paper)", "",
-             "The paper ranks models by their scores without tests. Here: Diebold-Mariano tests (Newey-West variance, "
-             f"{LAG} lags, two-sided, not corrected for multiple comparisons) and a day-block bootstrap with "
+             "The paper ranks models by their scores without tests. Here: Diebold-Mariano tests (Newey-West variance with "
+             f"Bartlett weights over {LAG} lags, Harvey-Leybourne-Newbold small-sample factor and t distribution; two-sided, not corrected for multiple comparisons) and a day-block bootstrap with "
              f"{args.draws} draws. APE, SE, AE: absolute percentage, squared and absolute error, the losses behind MAPE, "
              "CVRMSE and NMAE. \"Ranks first\": share of bootstrap draws in which the model has the lowest harmonic mean. "
              "p-values in brackets: the textbook Harvey-Leybourne-Newbold variance (equal weights, 23 lags). "
-             f"In a simulation with strongly correlated errors (AR(1), coefficient 0.8, 978 hours, no real difference; "
-             f"`size_check`) the main test gave p < 0.05 in {size_check():.1%} of 400 runs instead of 5%, so p-values "
+             f"In a simulation where the loss difference is a strongly correlated series (AR(1), coefficient 0.8, 978 hours, "
+             f"no real difference; `size_check`) the main test gave p < 0.05 in about {size_check():.0%} of 400 runs instead of 5%, so p-values "
              "near 0.05 are weak evidence. The reference model is the best on this same test set, which also favours "
              "finding a difference.",
              ""]

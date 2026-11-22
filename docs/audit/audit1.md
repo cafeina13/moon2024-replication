@@ -1,4 +1,4 @@
-# Audit 1 (2026-10-21): independent agents, no hints, one part at a time
+# Audit 1 (2026-10-20/21): independent agents, no hints, one part at a time
 
 Brief: read-only; recompute every number from `outputs/`; check article claims against the article text and code
 claims against the code; no target or limit on findings. The auditors were told nothing about the conversation or
@@ -41,7 +41,7 @@ Figs 2-4, 8-11, 13), every article quote, the paper-issue numbers, `paper.py`, m
 | 2 | ERROR | AEP actual values "10-1,100 Wh" | Confirmed: 210-3,200 (10-1,100 is the raw 10-minute range) | Notes, log, walkthrough, talking points |
 | 3 | ERROR | SHAP on all rows "would take hours" / "6 h 37 min" | Confirmed: CatBoost estimate 36.6 min; RF's not saved | "above the 30-minute budget" |
 | 4 | INCONSISTENCY | Figs 5a, 5d made with the old fixed 2,000-row rule; current code sizes the sample | Confirmed | Stated in the notes |
-| 5 | MISLABEL | Fig 12 verdict "RF very close; others differ" | Confirmed by eye: LightGBM's scatter is almost identical to the paper's, yet R² 0.706 vs 0.831. Followed up: the paper's R² is the squared correlation of in-sample predictions (LightGBM 0.831 = 0.831, RF 0.963 vs 0.964) | Verdict, notes, report, README; `run_raw_figures` now records it |
+| 5 | MISLABEL | Fig 12 verdict "RF very close; others differ" | Confirmed by eye: LightGBM's scatter is almost identical to the paper's, yet R² 0.706 vs 0.831. Followed up: the paper's R² is the squared correlation of in-sample predictions (LightGBM 0.831 = 0.831, RF 0.963 vs 0.964; 0.964 after the WeekStatus rerun of 2026-11-22) | Verdict, notes, report, README; `run_raw_figures` now records it |
 | 6 | OVERSTATEMENT | In-sample stated as fact in the notes | Confirmed at the time; now shown (finding 5) | Stated with the evidence |
 | 7 | OVERSTATEMENT | "The tables come from one fixed setting per model" | Confirmed: exact only for four model-dataset pairs | Notes say where it is exact |
 | 8 | ERROR | Grid XGBoost/CatBoost "0.1-0.7 points better" | Confirmed: XGBoost -1.24 to +0.01, CatBoost -0.81 to +0.04 | Notes |
@@ -79,7 +79,7 @@ every verdict number in parts 1-2 of this file. Walkthroughs are gitignored stud
 | 8 | MINOR | "Bound" row is a bound for MAPE only | Confirmed | Reworded |
 | 9 | MISLABEL | "Epoch 100 (article)" row is the 90%-data run | Confirmed | Relabelled; the article setup's 81.5 stated |
 | 10 | MINOR | Duplicate paragraph | Confirmed | Removed |
-| 11 | OVERSTATEMENT | "Best epoch is very early (1-8)"; "rough daily shape" | Confirmed: that is patience 10's pick; over 100 epochs the minima are later | Reworded |
+| 11 | OVERSTATEMENT | "Best epoch is very early (1-8)"; "rough daily shape" | Confirmed: that is patience 10's pick; over 100 epochs the minima are later for 8 of 10 (corrected in audit 2) | Reworded |
 | 12 | INCONSISTENCY | "about 0.006" in walkthrough 07 | Confirmed | 0.006-0.018 |
 | 13 | ERROR | "200 Wh hour costs 50 points" in walkthrough 07 | Confirmed | 48% for a 210 Wh hour |
 | 14 | OVERSTATEMENT | Early-stopping CVRMSE "matches" / "comes close" | Confirmed: lower for 8 of 10 | Fixed in all files |
@@ -90,7 +90,7 @@ every verdict number in parts 1-2 of this file. Walkthroughs are gitignored stud
 | 19 | MINOR | Base value "about 590" | Confirmed: 593.4-593.9, GBM 563.8 | Fixed |
 | 20 | INCONSISTENCY | Walkthrough 06 not updated for the R² finding; evidence not saved | Confirmed | Walkthrough fixed; `r2_definition.py` writes `docs/results/fig12_r2.md` |
 | 21 | ERROR | Grid CatBoost "off by 1-5 points" | Confirmed: up to 7.30 | Fixed |
-| 22 | OVERSTATEMENT | Grid RF "Matches" | Confirmed: up to 0.61 (scikit-learn 1.6.1) | Fixed |
+| 22 | OVERSTATEMENT | Grid RF "Matches" | Confirmed: up to 0.83 (dormitory, where the grid chose max_features 1.0); 0.61 where the setting is the same (scikit-learn 1.6.1) (corrected in audit 2) | Fixed |
 | 23 | INCONSISTENCY | XGBoost version "likely" vs "ruled out" | Confirmed: 1.7.6 is closer only on AEP internal inputs | Stated |
 | 24 | OVERSTATEMENT | Authors' settings "mid-table" everywhere | Confirmed: XGBoost up to 465 of 486 | "none near the top" |
 | 25 | MINOR | "Every result table (5-14) reports three measures" | Confirmed | Fixed |
@@ -99,7 +99,7 @@ every verdict number in parts 1-2 of this file. Walkthroughs are gitignored stud
 | 28 | OVERSTATEMENT | Dormitory networks "mostly within 1 point" (log, talking points) | Confirmed: 16 of 30 | Fixed |
 | 29 | OVERSTATEMENT | Talking points: "our networks much worse" | Confirmed | MAPE only; LSTM-TCN better |
 | 30 | OVERSTATEMENT | Talking points: one setting, "tables match" | Confirmed | Where exact stated |
-| 31 | ERROR | Talking points: automated tests for scaling and windows | Confirmed: tests cover split and lagged inputs only | Fixed |
+| 31 | ERROR | Talking points: automated tests for scaling and windows | Confirmed: no test covers scaling or the windows (the tests cover Table 1, the feature table, the split, lagged inputs and metrics; corrected in audit 2) | Fixed |
 | 32 | OVERSTATEMENT | Talking points: "R² ≈ 0.96" | Confirmed: 0.63-0.96 | Fixed, with the squared-correlation finding |
 | 33 | MINOR | Talking points omit LightGBM | Confirmed | Added |
 | 34 | MINOR | Quote "for each input set" not the article's; experiment "running" | Confirmed | Fixed |

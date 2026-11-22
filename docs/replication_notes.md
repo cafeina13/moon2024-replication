@@ -2,8 +2,8 @@
 
 Choices made where Moon et al. (2024) is silent or inconsistent, one line per point.
 Sources: the article ([doi:10.1371/journal.pone.0307654](https://doi.org/10.1371/journal.pone.0307654)) and
-the authors' repository ([sodayeong/PLOS-ONE_Github](https://github.com/sodayeong/PLOS-ONE_Github), created
-27 October 2024). Rule: the article decides; where it is silent, the authors' code and data decide; where the
+the authors' repository ([sodayeong/PLOS-ONE_Github](https://github.com/sodayeong/PLOS-ONE_Github); its current
+version dates from 27 October 2024). Rule: the article decides; where it is silent, the authors' code and data decide; where the
 code contradicts the article, we follow the article and report the code's variant.
 
 ## Data and features (AEP)
@@ -13,13 +13,13 @@ raw UCI data, equals the authors' published table on all 3,289 hours and 17 colu
 
 | Point | Article | What we do | Evidence |
 |---|---|---|---|
-| Hourly grouping | "resampled to hourly" | Sum of the six readings in (t - 1 h, t], labelled t; incomplete hours dropped | Reproduces Table 1 exactly |
+| Hourly grouping | "we resampled the AEP data to hourly intervals" | Sum of the six readings in (t - 1 h, t], labelled t; incomplete hours dropped | Reproduces Table 1 exactly |
 | Hourly weather | Not stated | Reading at the hour mark t | Authors' table |
 | Hour of day | Eqs (1)-(2) | Hour of the label t | Authors' table |
 | Day of week | Eqs (3)-(4), numbering not stated | Sunday = 0 ... Saturday = 6, taken from the hour's start (00:00 belongs to the previous day) | Authors' table |
 | Holiday indicator | Table 2: weekend = 1; text: public holidays added from timeanddate.com | Weekend only, from the hour's start; no public holidays | Authors' table marks none (Ascension, 5 May 2016, is 0). Article and data disagree; we follow the data that produced the results |
 | First week | Not stated | Kept; Cons_7, Holi_7 and Cons_avg are 0 there | Authors' table |
-| Cons_avg | "Average over the previous seven days" of the same day type | Mean at the same hour over the 7 most recent earlier days with the same Holi (fewer when history runs out) | Authors' table; matches 3,121 of 3,121 hours |
+| Cons_avg | "we calculated the average power consumption for holidays over the previous seven days" | Mean at the same hour over the 7 most recent earlier days with the same Holi (fewer when history runs out) | Authors' table; matches 3,121 of 3,121 hours |
 | Wind speed in WCT | Eq (6), unit not stated | m/s as given | Authors' table |
 | Train/test split | Train to 16 April, test from 17 April 2016 | Train ends with the hour labelled 2016-04-17 00:00 (23:00-24:00 on 16 April): 2,311 / 978 hours | Authors' code (`iloc[:2311]`) |
 
@@ -38,12 +38,12 @@ where they differ, we follow the published figures.
 
 | Figure | Match | Notes |
 |---|---|---|
-| 2, 3 (Taylor) | Point for point | Each shows 15 models (5 ensembles × 3 input sets). The text on Figure 3 says correlation "about 0.6"; the diagram itself shows 0.3-0.5 (ours: 0.28-0.51) |
+| 2, 3 (Taylor) | Very close | Each shows 15 models (5 ensembles × 3 input sets). The text on Figure 3 says correlation "about 0.6"; the diagram itself shows 0.3-0.5 (ours: 0.28-0.51) |
 | 4, 8, 10, 11 | Exact | Same bars, same order, same individual dots and lines. 10a plots Hour_y's SHAP values coloured by Hour_x |
 | 5 | LightGBM, CatBoost exact order; RF one neighbouring swap; XGBoost one swap and Temp two places higher | RF and CatBoost use a 2,000-hour sample; the XGBoost difference is unexplained (XGBoost 1.7.6 was tried and is further off) |
 | 9 | RF exact; XGBoost, LightGBM nearly; GBM somewhat different | Same models that keep differences of up to 2.7 (GBM) and 3.3 (XGBoost) points in Tables 8-10 |
 | 6, 7 | Close, not exact | Contour levels within about 21 kWh (top labels 412.24 vs 409.04). The paper's 6b/7b lack the few extreme SHAP values (Holi up to +135, THI up to +290) that its own Figure 4b, from the same GBM, shows; so 6b/7b come from a different run or a different subset of hours than 4b. Drawing them on the test year matches worse (PDP 511 vs 412, colour range 950-1,950 vs 800-1,700) |
-| 13 | Very close | With the published figure's 27 inputs (no NSM, rv1, rv2): the top 12 in the paper's order and the same bottom 3 (WeekStatus coded weekend = 1, as the article's data section; its colours now match the figure); the text's claims (lights most, WeekStatus least, RH_1, RH_out, RH_8, RH_3 strong) all hold |
+| 13 | Very close | With the published figure's 27 inputs (no NSM, rv1, rv2): the top 13 and the bottom 5 in the paper's order (WeekStatus coded weekend = 1, as the article's data section; its colours now match the figure); the text's claims (lights most, WeekStatus least, RH_1, RH_out, RH_8, RH_3 strong) all hold |
 | 12 | RF and LightGBM scatters almost identical; XGBoost similar; GBM, CatBoost differ | The paper's R² is the **squared correlation** of in-sample predictions, not the usual R²: refitting on all 3,289 hours and squaring the correlation gives LightGBM 0.831 (paper 0.831) and RF 0.964 (0.964); the usual R² of the same predictions is 0.706 and 0.930. GBM gives 0.541 vs 0.63, XGBoost 0.805 vs 0.786, CatBoost 0.986 vs 0.932 (`docs/results/fig12_r2.md`); for CatBoost even the usual R² (0.983) is above the paper's, so its model must differ. Usual in-sample R²: GBM 0.31, XGBoost 0.72, CatBoost 0.98: settings for this experiment are not given ("fine-tuned with optimal hyperparameter values"), so ours come from the same grid search. **On held-out test weeks every model has R² ≤ 0.05** (RF −1.85): the sensor columns describe the hours they were measured in but do not forecast |
 
 ## University Residential Complex
@@ -61,11 +61,11 @@ where they differ, we follow the published figures.
 | RF "auto" | Features per split: auto, sqrt, log2 | `max_features=1.0` ("auto" was removed from scikit-learn; for regression it meant all features) | Authors' code uses `None`, the same thing |
 | XGBoost feature sampling | "Feature sample by tree/level/node: 0.5, 0.75, 1.0" | Only `colsample_bytree` is varied (486 settings, not 4,374) | Authors' code |
 | XGBoost "gbdt" | Booster gbdt, dart | `gbtree`, `dart` | XGBoost's name for gbdt |
-| XGBoost dart | – | Kept as in the grid. With XGBoost's default `rate_drop=0` no trees are dropped, so dart behaves like gbtree | Timing probe: same fit time |
+| XGBoost dart | – | Kept as in the grid. With XGBoost's default `rate_drop=0` no trees are dropped, so dart behaves like gbtree | A timing probe gave the same fit time (output not saved) |
 | LightGBM subsample | 0.5 | Kept, but it has no effect: LightGBM only subsamples when `subsample_freq > 0`, which neither the article nor the code sets | LightGBM documentation |
 | GBM quantile loss | "quantile", no quantile given | scikit-learn default `alpha=0.9` | Authors' code |
-| Seeds | Random state 42 | 42 for every model | Article |
-| Versions | Not stated | Kaggle's: scikit-learn 1.9.1 for the main (fixed-setting), raw-column and figure runs, 1.6.1 for the grid search; XGBoost 3.4.1, LightGBM 4.6.0, CatBoost 1.2.10, pandas 2.3.3, NumPy 2.1.3 | Recorded with each run |
+| Seeds | Random state 42 (stated for the deep networks) | 42 for every model | Article (deep networks); authors' code (ensembles) |
+| Versions | Not stated | Kaggle's: scikit-learn 1.9.1 for the main (fixed-setting), raw-column and figure runs, 1.6.1 for the grid search; XGBoost 3.4.1, LightGBM 4.6.0, CatBoost 1.2.10, pandas 2.3.3, NumPy 2.1.3 | Recorded with each ensemble run (`best_*.json`); the figure runs record only the SHAP version |
 
 The random forest on AEP reproduces Tables 8, 9, 10 and 12 to every reported digit.
 
@@ -77,7 +77,8 @@ comparing it with the published rows (`run_match`) showed that the published num
 per model and dataset, used for all three input sets**: the settings hard-coded in the authors' notebook
 `explainable_AI_energy_consumption_models.ipynb` (`ensembles.AUTHORS_SETTINGS`). This is shown exactly for AEP RF and
 CatBoost and dormitory LightGBM and CatBoost (all 27 values each); for the others the fixed settings come closest
-but leave differences (up to 3.3 points on AEP). The main tables use these
+but leave differences (up to 3.3 points on AEP). (The setting-by-setting comparison tables of `run_match` were not
+saved; this ranking is recorded in `walkthrough/04-tuning.md` only.) The main tables use these
 (`run_ensembles fixed`, scikit-learn 1.9.1); the grid-search results are kept as what the described method gives.
 
 | Tables | With the authors' settings |
@@ -85,18 +86,19 @@ but leave differences (up to 3.3 points on AEP). The main tables use these
 | 5-7, 11 (dormitory) | LightGBM and CatBoost exact; GBM within 0.01; RF within 0.05; XGBoost within 0.08 |
 | 8-10, 12 (AEP) | RF and CatBoost exact (all 27 values each); LightGBM internal within 0.04, others within 1.6; GBM up to 2.7; XGBoost up to 3.3 |
 
-The authors' settings are mid-table on AEP under cross-validation *and* on the test set, so they were neither tuned
-on AEP nor picked using the test set. For GBM and LightGBM they rank among the best on the dormitory data
+The authors' settings were not near the top on AEP under cross-validation or on the test set (cross-validation tables
+not saved), so they were neither tuned on AEP nor picked using the test set. For GBM and LightGBM they rank among the best on the dormitory data
 (tuned there, then reused); for XGBoost and CatBoost they rank near the bottom even there. XGBoost 1.7.6 (before the
-2.0 change of default tree method) does not bring XGBoost closer, so that hypothesis is ruled out.
+2.0 change of default tree method) does not close the gap: on AEP it is essentially unchanged (summed absolute
+difference 28.2 against 28.5, largest 5.0 against 3.3), on the dormitory clearly further off (5.2 against 0.8).
 
 ### Differences from the paper and their causes (grid-search results)
 
 | Where | Difference | Cause |
 |---|---|---|
 | Table 5, LightGBM | About +2 points in every cell | Cross-validation ranks `dart` (MAPE 10.11%) just ahead of `gbdt` (10.32%). Refitting the second-ranked `gbdt`, learning rate 0.01, 1,000 trees (also the setting in the authors' final-model notebook) reproduces all nine values exactly. LightGBM's dart drops trees at random, so a near-tie can flip between versions |
-| Tables 5-7, XGBoost and CatBoost | XGBoost 1.24 better to 0.01 worse; CatBoost 0.81 better to 0.04 worse | Unexplained. XGBoost 1.7.6 (before the 2.0 default change) was tried and is further off; CatBoost versions not tested |
-| Figure 12 | Paper's R² of 0.63-0.96 are squared correlations of in-sample predictions | See the Figure 12 row above |
+| Tables 5-7, XGBoost and CatBoost | XGBoost 1.24 better to 0.01 worse; CatBoost 0.81 better to 0.04 worse | The paper used the fixed settings, not the grid choice: with them dormitory CatBoost is exact and XGBoost within 0.08 |
+| Figure 12 | For RF and LightGBM the paper's R² equals the squared correlation of in-sample predictions; GBM, XGBoost and CatBoost match neither way | See the Figure 12 row above |
 
 ## Deep networks (Tables 13-14)
 

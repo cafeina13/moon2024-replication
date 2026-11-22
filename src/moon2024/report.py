@@ -32,12 +32,15 @@ FIGURES = {
     5: (["fig05a", "fig05b", "fig05c", "fig05d"], "Near-exact",
         "LightGBM and CatBoost in the same order; RF with one neighbouring swap; XGBoost with one swap and Temp two "
         "places higher. RF and CatBoost SHAP use a random 2,000 of the 20,472 training hours (exact SHAP on all was "
-        "estimated above the 30-minute budget)."),
+        "estimated above the 30-minute budget); their tails are visibly shorter than the paper's, probably because of "
+        "the sample (not tested)."),
     6: (["fig06a", "fig06b"], "Close",
-        "PDP of Holi × Cons_avg: top contour label 409.04 vs the paper's 412.24; levels within about 21. The paper's 6b "
+        "PDP of Holi × Cons_avg: top contour label 409.04 vs the paper's 412.24; labelled levels within 18. The paper's 6b "
         "lacks the extreme SHAP values its own Figure 4b shows for the same GBM, so 6b seems to come from a different "
         "run or subset of hours."),
-    7: (["fig07a", "fig07b"], "Close", "PDP of THI × Cons_avg; same remark on 7b as on 6b."),
+    7: (["fig07a", "fig07b"], "Close", "PDP of THI × Cons_avg: labelled levels within 21; ours rises at THI above 72 "
+        "and Cons_avg below 1,000, where the paper's shows only a small step, and labels one more top level. Same remark "
+        "on 7b as on 6b."),
     8: (["fig08a", "fig08b"], "Exact", "CatBoost, AEP: feature importance and SHAP summary."),
     9: (["fig09a", "fig09b", "fig09c", "fig09d"], "Near-exact",
         "RF exact; XGBoost and LightGBM nearly; GBM somewhat different (GBM and XGBoost also keep differences of up to "
@@ -47,12 +50,12 @@ FIGURES = {
          "The article says this is GBM on the test set. It reproduces exactly only as CatBoost on the 2,311 training "
          "hours (we drew it four ways)."),
     12: (["fig12"], "RF, LightGBM scatter almost identical; others differ",
-         "Ours are fitted and scored on all 3,289 hours (in-sample). The paper's R² is the squared correlation of these "
-         "in-sample predictions: computed that way, ours give LightGBM 0.831 (paper 0.831) and RF 0.964 (0.964); it does "
-         "not explain GBM or CatBoost (table below). The bars below show the usual R². The article doesn't give this experiment's settings, so ours come from the "
+         "Ours are fitted and scored on all 3,289 hours (in-sample). For RF and LightGBM, whose scatters we reproduce, the "
+         "paper's R² equals the squared correlation of these in-sample predictions: 0.964 (paper 0.964) and 0.831 "
+         "(0.831). GBM, XGBoost and CatBoost match neither way (table below), so for them the definition can't be checked. The bars below show the usual R². The article doesn't give this experiment's settings, so ours come from the "
          "grid search. Held-out R² is in the table below."),
     13: (["fig13"], "Very close",
-         "RF SHAP on the 27 raw columns: the top 12 in the paper's order, the same bottom 3. WeekStatus is coded "
+         "RF SHAP on the 27 raw columns: the top 13 and the bottom 5 in the paper's order. WeekStatus is coded "
          "weekend = 1 (the article's data section), which also gives the figure's colours."),
 }
 
@@ -60,27 +63,29 @@ FIGURES = {
 PAPER_ISSUES = [
     ("The described tuning doesn't produce the published tables.",
      "\"Hyperparameters were optimized through a five-fold cross-validation process … GridSearchCV\"",
-     "Run as described, the search gives AEP results up to 16 MAPE points (18 CVRMSE points) away from Tables 8–10 "
-     "(both on weekdays; up to 11.8 points in the harmonic means of the tuning table). The tables come from one fixed "
-     "setting per model and dataset, hard-coded in the authors' explainability notebook and reused for all three "
-     "input sets."),
-    ("The Conclusions name the wrong best model for AEP.",
+     "Run as in the authors' grid code, the search gives AEP results up to 16 MAPE points (18 CVRMSE points) away from Tables 8–10 "
+     "(both on weekdays; up to 11.8 points in the harmonic means of the tuning table). The fixed setting per model and "
+     "dataset hard-coded in the authors' explainability notebook, reused for all three input sets, reproduces the tables "
+     "exactly for four model-dataset pairs and most closely for the rest (up to 3.3 points on AEP)."),
+    ("The Conclusions and the results section disagree on the best AEP model.",
      "\"the GBM model, honed with only external factors, outperformed its counterparts … within the AEP dataset\"",
-     "Table 12 gives the lowest harmonic mean to CatBoost with all 15 inputs (48.23); GBM with external inputs has "
-     "50.82. (In Table 10, GBM leads on MAPE, RF on CVRMSE, CatBoost on NMAE.)"),
-    ("The results text says external inputs gave the lowest errors.",
+     "The results section says \"the CatBoost model exhibited superior performance on the AEP dataset\", and Table 12 "
+     "gives the lowest harmonic mean to CatBoost with all 15 inputs (48.23). GBM is best only among the external-input "
+     "models (50.82), which may be what the Conclusions mean; read that way they are misleading rather than wrong."),
+    ("The results text is ambiguous about the best input set.",
      "\"the statistical values attained their nadir when external factors were considered\"",
-     "In Tables 5–10, all 15 inputs give the lowest value in all 45 dormitory cells and in 38 of 45 AEP cells; external "
-     "inputs alone give the lowest value in only 7 AEP cells. By harmonic mean, all 15 inputs are best for every model "
+     "Read as external inputs alone, it is wrong: in Tables 5–10, all 15 inputs (which include the external ones) give "
+     "the lowest value in all 45 dormitory cells and in 38 of 45 AEP cells; external inputs alone in only 7 AEP cells, "
+     "and the next paragraph itself says the combination improved most. By harmonic mean, all 15 inputs are best for every model "
      "except XGBoost on AEP."),
     ("Figure 11 is described as the wrong model and data.",
      "\"Fig 11 offers a clear interpretation of the GBM model's predictions for the test set\"",
      "The figure reproduces exactly as CatBoost on the training hours."),
-    ("Figure 12's R² values are in-sample squared correlations.",
+    ("Figure 12's R² values are not explained and appear to be in-sample.",
      "\"Fig 12 indicates that the RF model achieved the most commendable R2 value\"",
      "The article doesn't say how R² was computed. Refitted on all hours, our RF and LightGBM give almost the same "
      "scatter as the paper's, and the squared correlation of those in-sample predictions gives LightGBM 0.831 (paper "
-     "0.831) and RF 0.964 (0.964); the usual R² is 0.706 and 0.930. Squared correlation ignores bias. On held-out "
+     "0.831) and RF 0.964 (0.964); the usual R² is 0.706 and 0.930. GBM, XGBoost and CatBoost match neither way. Squared correlation ignores bias. On held-out "
      "weeks every model scores R² ≤ 0.05."),
     ("The text on Figure 3 overstates the correlation.",
      "\"Although a moderate correlation of about 0.6 was achieved\"",
@@ -104,8 +109,9 @@ PAPER_ISSUES = [
     ("Early stopping isn't mentioned.",
      "\"we ran 100 epochs to balance adequate learning and prevent overfitting\"",
      "The authors' notebook stops training early on a 10% validation split (patience 10). On AEP this matters: "
-     "trained that way, our networks no longer produce exploding predictions (Table 14 above; predictions from -258 to 3,235 Wh instead of -4,113 to 6,077). The run also trains on "
-     "10% fewer windows, so stopping alone isn't isolated."),
+     "trained that way, our networks no longer produce exploding predictions (Table 14 above; predictions from -258 to 3,235 Wh instead of -4,113 to 6,077). Trained "
+     "on the same 90% of windows for 100 epochs without stopping, the mean MAPE is 115.9 against 61.2 with stopping, so "
+     "the gain comes from stopping (Beyond the paper)."),
 ]
 
 
@@ -287,15 +293,22 @@ def beyond_section(results: Path) -> str:
     significance = (results / "significance.md").read_text(encoding="utf-8").split("\n", 2)[2]
     stopping = (results / "stopping_aep.md").read_text(encoding="utf-8")
     stopping = stopping[stopping.index("| Rule"):]  # the section has its own intro
+    ours = load_deep(Path("outputs") / "deep", "aep")
+    ours_mean = sum(m["hour24"]["MAPE"] for m in ours.values()) / len(ours)
+    nets = [v[0] for k, v in paper.DEEP_TABLES["aep"][1].items() if k in DEEP_NAMES]
+    paper_mean = sum(nets) / len(nets)
     return ("<h3>Are the differences significant?</h3>" + markdown_to_html(significance)
             + "<h3>When to stop training: the AEP deep networks, epoch by epoch</h3>"
             "<p>Each network was trained for 100 epochs on the first 90% of the training windows, with the test hours "
-            "scored after every epoch. Each row is a stopping rule: which epoch it picks (from training and validation "
-            "loss only) and the test MAPE there. The last row picks by test MAPE and is shown only as a bound for MAPE. The article's own setup (all training "
-            "windows, 100 epochs) gives a mean MAPE of 81.5; see Table 14.</p>"
+            "scored after every epoch (24th hour). Each row is a rule for choosing the epoch: a fixed epoch, or a rule that "
+            "looks only at training and validation loss; the cells give the test MAPE there, and the last two columns "
+            "are means over the ten networks. The last row picks by test MAPE and is shown only as a bound for MAPE. "
+            f"Our run of the article's setup (all training windows, 100 epochs) has a mean MAPE of {ours_mean:.1f}; the "
+            f"paper's Table 14 networks average {paper_mean:.1f}.</p>"
             + markdown_to_html(stopping)
             + '<figure class="wide"><img loading="lazy" src="figures/stopping_aep.png" alt="test MAPE, training and '
-            'validation loss per epoch for the ten networks"></figure>')
+            'validation loss per epoch for the ten networks"><figcaption>MAPE axis capped at 200; 1D-CNN and TCN go higher in '
+            'some epochs.</figcaption></figure>')
 
 
 def issues_section() -> str:
@@ -361,7 +374,7 @@ def main() -> None:
         f'<div class="card"><b>Tree ensembles, {DATASET_NAMES[d]} (Tables {"5–7" if d == "urc" else "8–10"})</b>{c[0]} of {c[1]} '
         f"published values reproduced exactly; largest difference {c[2]:.2f} points</div>" for d, c in counts.items())
     cards += ('<div class="card"><b>Figures 2–13</b>4, 8, 10 match exactly, 11 exactly as CatBoost on the '
-              "training hours; Taylor diagrams very close; 5, 9 nearly; 6, 7, 13 closely; 12 closely for RF and LightGBM</div>"
+              "training hours; Taylor diagrams very close; 5, 9 nearly; 6, 7 closely; 13 very closely; 12 closely for RF and LightGBM</div>"
               '<div class="card"><b>Deep networks</b>Values not reproduced exactly; possible causes (untested): '
               "initialisation, GPU arithmetic, library versions. Dormitory: eight of ten networks within 1.8 points; our LSTM "
               "far better, our Bi-LSTM-TCN unstable. AEP (100 epochs): ours worse than the paper on MAPE for 9 "

@@ -13,16 +13,16 @@ are in [results/](results/).
 
 | Part of the paper | Status | Match with the paper |
 |---|---|---|
-| Data, hourly table, 15 inputs (Tables 1–2) | Done | Exact: Table 1 for both datasets; our inputs equal the authors' published table on all 3,289 hours |
+| Data, hourly table, 15 inputs (Tables 1–2) | Done | Exact: Table 1 for both datasets; our AEP inputs equal the authors' published table on all 3,289 hours |
 | Tree ensembles, dormitory (Tables 5–7, 11) | Done | LightGBM, CatBoost exact; GBM within 0.01; RF within 0.05; XGBoost within 0.08 |
 | Tree ensembles, AEP (Tables 8–10, 12) | Done | RF, CatBoost exact; LightGBM within 0.04 on internal inputs, up to 1.6 otherwise; GBM up to 2.7; XGBoost up to 3.3 |
-| Taylor diagrams (Figs 2–3) | Done | Point for point |
-| SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
-| Raw-column experiment (Figs 12–13) | Done | RF and Fig 13 very close; paper's R² shown to be in-sample |
+| Taylor diagrams (Figs 2–3) | Done | Very close |
+| SHAP / feature importance / PDP (Figs 4–11) | Done | Figs 4, 8, 10 exact; 11 exact as CatBoost on the training hours; 5, 9 near-exact; 6–7 close (paper inconsistent with its own Fig 4) |
+| Raw-column experiment (Figs 12–13) | Done | Fig 13 very close (top 13, bottom 5 in order); RF and LightGBM in Fig 12 very close, and for them the paper's R² is the in-sample squared correlation |
 | Deep networks, dormitory (Table 13) | Done | Same conclusion (all worse than GBM); 16 of 30 values within 1 point; our LSTM far better, our Bi-LSTM-TCN unstable |
-| Deep networks, AEP (Table 14) | Done | CatBoost best on CVRMSE and NMAE, as in the paper; on MAPE six of the paper's networks beat CatBoost, none of ours do; overfit at 100 epochs; with the notebook early stopping CVRMSE comes close to the paper's, MAPE stays 6–35 points higher |
+| Deep networks, AEP (Table 14) | Done | CatBoost best on CVRMSE and NMAE, as in the paper; on MAPE six of the paper's networks beat CatBoost, none of ours do; overfit at 100 epochs; with the notebook early stopping CVRMSE is lower than the paper's for 8 of 10, MAPE stays 6–35 points higher |
 | Wrap-up (figures, README) | Done | – |
-| Report (`docs/report.html`) | Done; audited (`docs/audit/audit1.md`) | – |
+| Report (`docs/report.html`) | Done; audited twice (`docs/audit/audit1.md`, `audit2.md`) | – |
 
 ---
 
@@ -230,3 +230,14 @@ are in [results/](results/).
 
 **Open**
 - Audit 2, parts 3-6.
+
+**Audit 2 complete (2026-11-22, later the same day).** All six parts ran (findings in `docs/audit/audit2.md`) and their
+fixes are applied. Corrections to earlier entries of this log, which stay as written for their dates:
+- 2026-10-21: audit 1 part 3 did run (37 findings, commit ad8cc93); that entry still says "still to run".
+- 2026-10-20 (afternoon): the dormitory networks took 0.30–2.87 h each, not "about 1–3 hours".
+- 2026-10-21: "115.9 at epoch 100" is on the same 90% training split; the article-style run has a mean of 81.5.
+- 2026-10-20 (night): the authors' notebook also uses CatBoost for Figure 11; what differs is the training hours and
+  the importance order.
+- 2026-10-20: "point for point" for the Taylor diagrams is now "very close" (the AEP GBM, XGBoost and LightGBM points
+  come from models that don't reproduce exactly).
+
