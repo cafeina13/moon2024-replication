@@ -206,3 +206,27 @@ are in [results/](results/).
 | Hand-typed ranges and "all/every" claims wrong in several documents | Written from memory, checked by their author | Numbers in the report computed by code; independent audits |
 | Kaggle downloads broke off | Connection at about 5 KB/s with 25% packet loss | Retried after switching networks |
 
+
+---
+
+## 2026-11-22: Figure 13 coding, Figure 12 R² for all models, audit-2 fixes
+
+**Done**
+- WeekStatus in the raw-column table is now 1 on weekends (the article's data section; it equals the authors' Holi
+  flag on all 3,289 hours). The first version followed the article's Figure 13 text (weekend 0). Reran the raw-column
+  refits and Figures 12-13 on Kaggle (`moon2024-raw-figures-ws`); the old outputs are kept in `outputs/raw-weekday1/`.
+- `r2_definition` on Kaggle, where all five libraries are installed: the squared-correlation R² for every model.
+- Applied the audit-2 part 1-2 fixes (report summary card, Taylor and Figure 11 wording, grid-search attribution,
+  footer date, Figure 6 paper issue, table labels, walkthrough 07).
+
+**Results**
+- XGBoost, LightGBM and CatBoost are identical to the first run (flipping a 0/1 column cannot change their trees).
+  RF and GBM change slightly, because scikit-learn's random choices are used in a different order when the branches
+  of a split swap sides: RF held-out R² −1.99 → −1.85, in-sample 0.9305 → 0.9297.
+- Figure 13: the top 12 inputs are now in exactly the paper's order (before: top 7 with two swaps), and WeekStatus's
+  colours match.
+- Figure 12, squared correlation against the paper: RF 0.964 / 0.964, LightGBM 0.831 / 0.831, XGBoost 0.805 / 0.786,
+  GBM 0.541 / 0.630, CatBoost 0.986 / 0.932. The explanation holds for RF and LightGBM only.
+
+**Open**
+- Audit 2, parts 3-6.

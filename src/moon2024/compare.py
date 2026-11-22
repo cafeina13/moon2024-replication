@@ -86,7 +86,8 @@ def deep_table(results: Path, deep: Path, dataset: str) -> str:
         f"## Table {number}: deep networks, {DATASET_NAMES[dataset]}",
         "",
         "Each metric: ours scored on the 24th forecast hour (the article) / ours scored on every hour of every "
-        "test window (the authors' notebook) / paper, in %. The last row is the best ensemble (all 15 inputs).",
+        "test window (the authors' notebook) / paper, in %. The last row is the best ensemble (all 15 inputs), "
+        "shown as ours / paper (difference).",
         "",
         "| Model | MAPE | CVRMSE | NMAE |",
         "|---|---|---|---|",

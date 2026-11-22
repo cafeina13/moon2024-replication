@@ -11,7 +11,7 @@ so it opens from the repository folder or from GitHub Pages.
 import argparse
 import html
 import json
-import subprocess
+from datetime import date
 from pathlib import Path
 
 from . import paper
@@ -24,8 +24,8 @@ DEEP_NAMES = {"lstm": "LSTM", "bilstm": "Bi-LSTM", "gru": "GRU", "bigru": "Bi-GR
 
 # Figure number -> (our panels, how close, notes). Judged by eye, side by side; the images are below each note.
 FIGURES = {
-    2: (["fig02"], "Point for point", "Taylor diagram, dormitory: 15 points (5 ensembles × 3 input sets)."),
-    3: (["fig03"], "Point for point",
+    2: (["fig02"], "Very close", "Taylor diagram, dormitory: 15 points (5 ensembles × 3 input sets)."),
+    3: (["fig03"], "Very close",
         "Taylor diagram, AEP. The article's text says correlation \"about 0.6\"; its diagram, like ours, shows about "
         "0.3–0.5."),
     4: (["fig04a", "fig04b"], "Exact", "GBM, dormitory: feature importance and SHAP summary."),
@@ -48,11 +48,12 @@ FIGURES = {
          "hours (we drew it four ways)."),
     12: (["fig12"], "RF, LightGBM scatter almost identical; others differ",
          "Ours are fitted and scored on all 3,289 hours (in-sample). The paper's R² is the squared correlation of these "
-         "in-sample predictions: computed that way, ours give LightGBM 0.831 (paper 0.831) and RF 0.963 (0.964); the "
-         "bars below show the usual R². The article doesn't give this experiment's settings, so ours come from the "
+         "in-sample predictions: computed that way, ours give LightGBM 0.831 (paper 0.831) and RF 0.964 (0.964); it does "
+         "not explain GBM or CatBoost (table below). The bars below show the usual R². The article doesn't give this experiment's settings, so ours come from the "
          "grid search. Held-out R² is in the table below."),
     13: (["fig13"], "Very close",
-         "RF SHAP on the 27 raw columns: same top 7 (two neighbouring swaps), same bottom 3."),
+         "RF SHAP on the 27 raw columns: the top 12 in the paper's order, the same bottom 3. WeekStatus is coded "
+         "weekend = 1 (the article's data section), which also gives the figure's colours."),
 }
 
 # Statements in the article that its own results don't support. Each quote is copied from the article text.
@@ -79,11 +80,16 @@ PAPER_ISSUES = [
      "\"Fig 12 indicates that the RF model achieved the most commendable R2 value\"",
      "The article doesn't say how R² was computed. Refitted on all hours, our RF and LightGBM give almost the same "
      "scatter as the paper's, and the squared correlation of those in-sample predictions gives LightGBM 0.831 (paper "
-     "0.831) and RF 0.963 (0.964); the usual R² is 0.706 and 0.930. Squared correlation ignores bias. On held-out "
+     "0.831) and RF 0.964 (0.964); the usual R² is 0.706 and 0.930. Squared correlation ignores bias. On held-out "
      "weeks every model scores R² ≤ 0.05."),
     ("The text on Figure 3 overstates the correlation.",
      "\"Although a moderate correlation of about 0.6 was achieved\"",
      "The diagram shows about 0.3–0.5 (ours 0.28–0.51)."),
+    ("The text on Figure 6(a) reverses the holiday effect.",
+     "\"the plot shows that energy consumption peaks during holidays or weekends, highlighted by contours that rise to +412.24\"",
+     "Both panels of Figure 6 (the paper's and ours) show days off lowering the prediction, and so does the data: the "
+     "dormitory uses 1,291 kWh per hour on working days and 1,065 on days off. The +412 contour belongs to high Cons_avg, "
+     "not to holidays. The text on Figure 6(b) reads the effect correctly."),
     ("The holiday indicator isn't built as described.",
      "\"we extracted holiday information from Time and Date … public holidays in both datasets\"",
      "The authors' published AEP feature table marks weekends only (e.g. Ascension Day, 5 May 2016, is 0); we follow "
@@ -98,7 +104,7 @@ PAPER_ISSUES = [
     ("Early stopping isn't mentioned.",
      "\"we ran 100 epochs to balance adequate learning and prevent overfitting\"",
      "The authors' notebook stops training early on a 10% validation split (patience 10). On AEP this matters: "
-     "trained that way, our networks no longer produce exploding predictions (Table 14 below). The run also trains on "
+     "trained that way, our networks no longer produce exploding predictions (Table 14 above; predictions from -258 to 3,235 Wh instead of -4,113 to 6,077). The run also trains on "
      "10% fewer windows, so stopping alone isn't isolated."),
 ]
 
@@ -233,10 +239,11 @@ def figure_section(outputs: Path) -> str:
         ours = "".join(f'<img loading="lazy" src="figures/{p}.png" alt="our {p}">' for p in panels)
         extra = ""
         if number == 12:
-            rows = "".join(f"<tr><th>{paper.MODEL_NAMES[m]}</th><td>{v['paper']:.3f}</td><td>{v['in_sample']:.3f}</td>"
-                           f"<td>{v['held_out']:.3f}</td></tr>" for m, v in raw.items())
-            extra = ('<table class="cmp small"><tr><th></th><th>Paper R²</th><th>Ours, in-sample</th>'
-                     f"<th>Ours, held-out test weeks</th></tr>{rows}</table>")
+            rows = "".join(f"<tr><th>{paper.MODEL_NAMES[m]}</th><td>{v['paper']:.3f}</td><td>{v['in_sample_corr2']:.3f}</td>"
+                           f"<td>{v['in_sample']:.3f}</td><td>{v['held_out']:.3f}</td></tr>" for m, v in raw.items())
+            extra = ('<table class="cmp small"><tr><th></th><th>Paper R²</th><th>Ours, in-sample, squared correlation</th>'
+                     "<th>Ours, in-sample, usual R²</th><th>Ours, held-out test weeks, usual R²</th></tr>"
+                     f"{rows}</table>")
         parts.append(
             f'<section class="fig" id="fig{number}"><h3>Figure {number} <span class="verdict">{esc(verdict)}</span></h3>'
             f"<p>{esc(note)}</p>{extra}"
@@ -350,16 +357,16 @@ def main() -> None:
     results = args.outputs / "fixed"
 
     tables, counts = ensemble_section(results)
-    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
     cards = "".join(
         f'<div class="card"><b>Tree ensembles, {DATASET_NAMES[d]} (Tables {"5–7" if d == "urc" else "8–10"})</b>{c[0]} of {c[1]} '
         f"published values reproduced exactly; largest difference {c[2]:.2f} points</div>" for d, c in counts.items())
-    cards += ('<div class="card"><b>Figures 2–13</b>4, 8, 10, 11 and both Taylor diagrams match exactly; 5, 9 nearly; '
-              "6, 7, 13 closely; 12 closely for RF only</div>"
+    cards += ('<div class="card"><b>Figures 2–13</b>4, 8, 10 match exactly, 11 exactly as CatBoost on the '
+              "training hours; Taylor diagrams very close; 5, 9 nearly; 6, 7, 13 closely; 12 closely for RF and LightGBM</div>"
               '<div class="card"><b>Deep networks</b>Values not reproduced exactly; possible causes (untested): '
               "initialisation, GPU arithmetic, library versions. Dormitory: eight of ten networks within 1.8 points; our LSTM "
-              "far better, our Bi-LSTM-TCN unstable. AEP: ours worse on MAPE; with the notebook's early stopping, CVRMSE "
-              "lower than the paper's for 8 of 10</div>")
+              "far better, our Bi-LSTM-TCN unstable. AEP (100 epochs): ours worse than the paper on MAPE for 9 "
+              "of 10 networks, CVRMSE 8 of 10, NMAE 9 of 10; with the notebook's early stopping, MAPE worse for all 10 but "
+              "CVRMSE lower than the paper's for 8 of 10</div>")
 
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Moon 2024 Replication</title>
@@ -387,7 +394,7 @@ equal the authors' published AEP feature table on all 3,289 hours (automated tes
 {tables}
 
 <h2 id="tuning">Which settings produced the tables</h2>
-<p>The article describes a 5-fold grid search per model and input set. Harmonic mean (all days), in %: <b>grid</b> =
+<p>The article describes a 5-fold grid search per model; the authors' ensemble notebook runs it once per input set. Harmonic mean (all days), in %: <b>grid</b> =
 the search as described, <b>fixed</b> = the single setting per model and dataset hard-coded in the authors' explainability notebook,
 reused for every input set. The grid runs used scikit-learn 1.6.1 and the fixed runs 1.9.1, which alone moves single RF values by
 up to 0.6 points; the large gaps come from the settings. Colour = difference from the paper, as above.</p>
@@ -413,7 +420,7 @@ differ in size.) The early-stopping line (AEP) is not coloured.</p>
 sections look at both.</p>
 {beyond_section(Path('docs/results'))}
 
-<footer>Generated by <code>python -m moon2024.report</code> at commit {esc(commit)} of
+<footer>Generated by <code>python -m moon2024.report</code> on {date.today().isoformat()} from
 <a href="https://github.com/cafeina13/moon2024-replication">cafeina13/moon2024-replication</a>. Every number in the
 tables is computed from saved outputs. The paper's figures and values are © 2024 Moon et al., published under
 <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.</footer>

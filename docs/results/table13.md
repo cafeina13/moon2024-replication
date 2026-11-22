@@ -1,6 +1,6 @@
 ## Table 13: deep networks, University Residential Complex
 
-Each metric: ours scored on the 24th forecast hour (the article) / ours scored on every hour of every test window (the authors' notebook) / paper, in %. The last row is the best ensemble (all 15 inputs).
+Each metric: ours scored on the 24th forecast hour (the article) / ours scored on every hour of every test window (the authors' notebook) / paper, in %. The last row is the best ensemble (all 15 inputs), shown as ours / paper (difference).
 
 | Model | MAPE | CVRMSE | NMAE |
 |---|---|---|---|

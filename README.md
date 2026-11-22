@@ -21,9 +21,9 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
 | Data, hourly table, 15 inputs (Tables 1-2) | Exact: Table 1 for both datasets; our AEP inputs, built from the raw data, equal the authors' AEP feature table on all 3,289 hours | `tests/` |
 | Tree ensembles, dormitory (Tables 5-7, 11) | LightGBM, CatBoost exact; GBM within 0.01; RF within 0.05; XGBoost within 0.08 | [docs/results](docs/results) |
 | Tree ensembles, AEP (Tables 8-10, 12) | RF, CatBoost exact; LightGBM within 0.04 on internal inputs, up to 1.6 otherwise; GBM up to 2.7; XGBoost up to 3.3 | [docs/results](docs/results) |
-| Taylor diagrams (Figs 2-3) | Point for point | [docs/figures](docs/figures) |
-| SHAP, feature importance, PDP (Figs 4-11) | Figs 4, 8, 10, 11 exact; 5, 9 near-exact; 6-7 close | [docs/figures](docs/figures) |
-| Raw-column experiment (Figs 12-13) | Fig 13 and RF in Fig 12 very close | [docs/figures](docs/figures) |
+| Taylor diagrams (Figs 2-3) | Very close | [docs/figures](docs/figures) |
+| SHAP, feature importance, PDP (Figs 4-11) | Figs 4, 8, 10 exact; 11 exact as CatBoost on the training hours; 5, 9 near-exact; 6-7 close | [docs/figures](docs/figures) |
+| Raw-column experiment (Figs 12-13) | Fig 13, and RF and LightGBM in Fig 12, very close | [docs/figures](docs/figures) |
 | Deep networks (Tables 13-14) | Dormitory: as in the paper, GBM beats every network on all three metrics; ours are within 1.8 points of the paper for eight of ten networks, but our LSTM is far better than the paper's (MAPE 6.98 vs 15.06) and our Bi-LSTM-TCN is unstable (CVRMSE 31.55 vs 9.23). AEP: the paper's CatBoost wins on CVRMSE and NMAE but six networks have a lower MAPE; in ours CatBoost wins on all three. Our AEP networks are worse than the paper's on MAPE (9 of 10) | [docs/results](docs/results) |
 
 **Findings beyond the numbers**
@@ -35,8 +35,9 @@ session-by-session history is in [docs/progress_log.md](docs/progress_log.md).
   points (CatBoost on AEP matches all 27 values exactly).
 - **Figure 12's R² values are squared correlations of in-sample predictions.** The article doesn't say how they
   were computed. Refitted on all hours, our RF and LightGBM give almost the same scatter as the paper's, and squaring
-  the correlation gives LightGBM 0.831 (paper 0.831) and RF 0.963 (paper 0.964); the usual R² of the same
-  predictions is 0.706 and 0.930. On held-out weeks every model scores R² ≤ 0.05.
+  the correlation gives LightGBM 0.831 (paper 0.831) and RF 0.964 (paper 0.964); the usual R² of the same
+  predictions is 0.706 and 0.930. It does not explain GBM (0.541 vs 0.630) or CatBoost (0.986 vs 0.932); XGBoost is
+  close (0.805 vs 0.786). On held-out weeks every model scores R² ≤ 0.05.
 - **Figure 11 is CatBoost on the training hours**, not GBM on the test set as the text says.
 - **The Conclusions contradict the tables.** For example, they name GBM with external inputs as best on AEP, while
   Table 12 gives CatBoost with all 15 inputs the lowest harmonic mean (in Table 10, GBM, RF and CatBoost each lead
