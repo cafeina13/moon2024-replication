@@ -56,8 +56,9 @@ def to_hourly_raw_columns(raw: pd.DataFrame) -> pd.DataFrame:
     RH_1-RH_9, the six weather columns, Day_of_week and WeekStatus. Candanedo
     et al.'s NSM (seconds since midnight) and the random variables rv1, rv2
     are not in the figure, so they are left out. The day is taken from the
-    hour's start; WeekStatus is 1 on weekdays and 0 on weekends (the coding in
-    the article's text on Figure 13).
+    hour's start; WeekStatus is 1 on weekends and 0 on weekdays: the coding of the
+    article's data section, which the published Figure 13's colours also follow (its
+    text on the figure states the reverse).
     """
     hour_end = raw.index.ceil("h")
     complete = raw.groupby(hour_end).size() == READINGS_PER_HOUR
@@ -66,7 +67,7 @@ def to_hourly_raw_columns(raw: pd.DataFrame) -> pd.DataFrame:
     table = energy.join(sensors, how="left")
 
     day = table.index - pd.Timedelta(hours=1)
-    table["WeekStatus"] = (day.dayofweek < 5).astype(int)
+    table["WeekStatus"] = (day.dayofweek >= 5).astype(int)
     table["Day_of_week"] = day.dayofweek
     table.index.name = "Date"
     return table.rename(columns={"Appliances": "Consumption"})

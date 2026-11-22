@@ -82,7 +82,7 @@ def fit_and_predict(dataset: str, model: str, chosen: dict, out: Path) -> None:
     for name, columns in data.input_sets(dataset).items():
         fitted = ensembles.make_estimator(model, **chosen[name]).fit(train[columns], train[TARGET])
         pd.DataFrame({
-            "Date": test.index, "Holi": test["Holi"].to_numpy() if "Holi" in test else test["WeekStatus"].rsub(1).to_numpy(),
+            "Date": test.index, "Holi": test["Holi"].to_numpy() if "Holi" in test else test["WeekStatus"].to_numpy(),
             "y": test[TARGET].to_numpy(), "y_hat": fitted.predict(test[columns]),
         }).to_csv(out / f"pred_{dataset}_{model}_{name}.csv", index=False)
         print(f"{dataset} {model} {name}: {chosen[name]}", flush=True)
