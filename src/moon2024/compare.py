@@ -114,12 +114,15 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
 
     for (dataset, inputs), (number, _) in paper.ENSEMBLE_TABLES.items():
-        (args.out / f"table{number:02d}.md").write_text(ensemble_table(args.results, dataset, inputs), encoding="utf-8")
+        (args.out / f"table{number:02d}.md").write_text(ensemble_table(args.results, dataset, inputs), encoding="utf-8", newline="
+")
     for dataset, (number, _) in paper.HARMONIC_MEAN_TABLES.items():
-        (args.out / f"table{number:02d}.md").write_text(harmonic_mean_table(args.results, dataset), encoding="utf-8")
+        (args.out / f"table{number:02d}.md").write_text(harmonic_mean_table(args.results, dataset), encoding="utf-8", newline="
+")
     if args.deep:
         for dataset, (number, _) in paper.DEEP_TABLES.items():
-            (args.out / f"table{number:02d}.md").write_text(deep_table(args.results, args.deep, dataset), encoding="utf-8")
+            (args.out / f"table{number:02d}.md").write_text(deep_table(args.results, args.deep, dataset), encoding="utf-8", newline="
+")
     print(f"wrote tables to {args.out}")
 
 
